@@ -1,123 +1,86 @@
 # ClaimSight
 
-**AI-Assisted Vehicle Insurance Claims Investigation Platform (Decision-Support Prototype)**
+**AI-Assisted Vehicle Insurance Claims Investigation Platform — Decision-Support Prototype**
 
-> ClaimSight is a **decision-support** prototype. It never adjudicates claims
-> autonomously — a human claims officer always makes the final decision. All
-> outputs are recommendations with attached evidence.
+> ClaimSight never adjudicates claims on its own. A human claims officer always makes the final decision. Every AI output is a recommendation backed by traceable evidence.
 
 ---
 
-## Overview
+## What is ClaimSight?
 
-Vehicle insurance claim handlers spend a large share of their day cross-checking
-documents, photos, repair estimates, and historical claim records. ClaimSight
-attempts to shorten that loop by:
+Vehicle insurance claims handling is a manual, evidence-heavy job. A claims officer typically reads a claim form, examines accident photos, cross-checks a repair estimate against what the photos show, reviews the customer's prior claim history, and then decides whether to approve, flag, or investigate. That process is time-consuming and easy to get wrong in either direction — a missed red flag costs money; an unfair flag costs customer trust.
 
-1. **Reading** claim photos with a small fine-tuned vision model.
-2. **Extracting** the structured fields of each uploaded document (claim form,
-   repair estimate, prior-claim history).
-3. **Cross-checking** the claim against nine deterministic consistency rules
-   (R1–R9) and a frozen risk-scoring model.
-4. **Summarising** the findings with an LLM (Gemini 2.5 Flash) that is strictly
-   forbidden from inventing numbers or making the final call.
-5. **Surfacing** the evidence, the rule firings, the risk band, and the LLM
-   summary on a single investigation page, so a human officer can decide.
+ClaimSight aims to shorten that loop by doing the cross-checking automatically and surfacing the results clearly, so a human officer can make a faster and better-informed decision. It never replaces that decision.
 
-The system is **end-to-end runnable** on a laptop with PostgreSQL. A demo
-mode (env-var toggles) lets the reviewer see the full pipeline without the
-trained CV checkpoint or a live Gemini key.
+The full pipeline:
+
+1. **Images** — accident photos are analysed by a fine-tuned ResNet-50 computer-vision model that predicts damage type (8 classes) and severity (minor / moderate / severe).
+2. **Documents** — uploaded claim forms, repair estimates, and policy documents pass through a limited deterministic extraction layer. Currently this reads a policy-number token from filenames; full OCR-based field extraction is a future task.
+3. **Consistency rules (R1–R9)** — nine deterministic rules cross-check all the evidence: do the photos match the claimed damage? Does the repair estimate cost match the baseline for this type of damage? Has the same vehicle had the same damage repaired before? And so on.
+4. **Risk score** — a five-feature, fixed-weight scoring formula (no machine learning) turns the rule firings into a 0–100 score and a Low / Medium / High band.
+5. **Gemini narrative** — Gemini 2.5 Flash writes a 3–6 sentence investigation summary, citing only the rule firings and evidence already computed. The recommendation (approve / review / investigate) is computed deterministically from the risk band; Gemini's value is overwritten.
+6. **Human decision** — an officer reviews all the evidence on a single page and records one of four verdicts: Approve, Manual review, Investigate, or Deny.
 
 ---
 
-## Features
+## Key features
 
-- **Customer / policy / vehicle / claim CRUD** with FastAPI + SQLAlchemy 2.0.
-- **Image upload + CV inference** (PyTorch, ResNet-50, dual-head: damage type +
-  severity).
-- **Document upload + stubbed DocIntel** that extracts a policy number from
-  filenames and otherwise returns an empty (honest) field set with a
-  `0.5` raw-confidence marker.
-- **Deterministic Consistency Engine** with nine rules (R1–R9) covering
-  unsupported damage, severity mismatches, repair-component mismatches,
-  excessive cost, duplicate previous damage, policy-coverage mismatches, claim
-  frequency, near-policy-boundary dates, and document-field conflicts.
-- **Frozen Risk Engine** that produces a 0–10 explainable score and a
-  Low / Medium / High band. Severity is bumped to `Medium` when a clean claim
-  has no signals (low-data-confidence default).
-- **Gemini Investigation Layer** (optional, mockable): a strict prompt that
-  *narrates* the deterministic findings in 3–6 sentences, refuses to recompute
-  scores, and overwrites any hallucinated recommendation with the
-  deterministic value.
-- **Nine-screen React UI**: Dashboard, Claims List, New Claim, Claim Analysis,
-  Image Analysis, Document Viewer, Risk Signals, Investigation Summary,
-  Decision Panel.
-- **Demo mode** (`USE_DEMO_CV=1`, `USE_DEMO_GEMINI=1`) for offline review and
-  CI.
-- **Demo data generator** that seeds the five Section 3.3 scenarios
-  (legitimate, inflated estimate, image/document mismatch, previous-claim
-  overlap, multi-signal suspicious).
+- **CRUD for the full claims entity graph** — customers, vehicles, policies, claims, accidents, images, documents, repair estimates, and previous claims.
+- **Image upload + CV inference** — PyTorch ResNet-50 with dual heads (damage type + severity). A demo predictor (filename-based, no checkpoint required) is available for offline review.
+- **Document upload + extraction** — PyMuPDF is included. The current extraction layer is a deterministic stub: it reads a `POL-XXXX` token from the filename of policy documents and otherwise returns an honest empty field set. Real OCR is a documented future task.
+- **Nine deterministic consistency rules (R1–R9)** — pure Python, unit-testable, no LLM calls.
+- **Frozen risk engine** — five named, fixed-weight features, 0–100 score, Low / Medium / High bands. Fully explainable; each contributing factor is labelled with the underlying risk signals and claim data that drove it.
+- **Gemini investigation layer** — optional, mockable. Strict prompt that forbids inventing numbers or making the final call. Fails gracefully (summary set to null; pipeline still completes).
+- **Nine-screen React UI** — Dashboard, Claims List, New Claim, Claim Analysis, Image Analysis, Document Viewer, Risk Signals, Investigation Summary, Decision Panel.
+- **Demo mode** — two env-var toggles replace the CV model and Gemini API with deterministic stubs so the full pipeline can run offline.
+- **Demo data generator** — seeds five repeatable scenario claims (legitimate, inflated estimate, image/document mismatch, previous-claim overlap, multi-signal suspicious).
 
 ---
 
 ## Architecture
 
 ```
-┌──────────────────┐     HTTP     ┌────────────────────────────────┐
-│  React frontend  │ ───────────▶ │  FastAPI backend (uvicorn)     │
-│  Vite + TS       │ ◀─────────── │  /api/uploads served statically│
-│  9 screens       │              └────────────────────────────────┘
-└──────────────────┘                       │
-                                           │ SQLAlchemy 2.0
-                                           ▼
-                                    ┌──────────────────┐
-                                    │  PostgreSQL 15+  │
-                                    └──────────────────┘
-                                           ▲
-                                           │
-        ┌──────────────────────────────────┴────────────────────────────┐
-        │                                                               │
-        │            Pipeline (per /claims/{id}/analyze run)            │
-        │  ┌────────────┐  ┌──────────────┐  ┌────────────────────────┐ │
-        │  │ CV module  │→ │ Document     │→ │ Consistency Engine     │ │
-        │  │ ResNet-50  │  │ Intelligence │  │ R1…R9 deterministic    │ │
-        │  │ (PyTorch)  │  │ (PyMuPDF +   │  │ rule firings           │ │
-        │  │            │  │  stub)       │  │                        │ │
-        │  └────────────┘  └──────────────┘  └────────────────────────┘ │
-        │                                              │                  │
-        │                                              ▼                  │
-        │                                  ┌────────────────────────┐    │
-        │                                  │  Risk Engine           │    │
-        │                                  │  (frozen 5-feature     │    │
-        │                                  │   weighted scoring)    │    │
-        │                                  └────────────────────────┘    │
-        │                                              │                  │
-        │                                              ▼                  │
-        │                                  ┌────────────────────────┐    │
-        │                                  │  Gemini Investigation  │    │
-        │                                  │  Layer (LLM narration, │    │
-        │                                  │  no score computation) │    │
-        │                                  └────────────────────────┘    │
-        └────────────────────────────────────────────────────────────────┘
+┌──────────────────┐     HTTP/JSON    ┌────────────────────────────────┐
+│  React frontend  │ ──────────────▶ │  FastAPI backend (uvicorn)     │
+│  Vite + TS       │ ◀────────────── │  /api/* routers                │
+│  9 screens       │                  │  /api/uploads  (static files)  │
+└──────────────────┘                  └────────────────────────────────┘
+                                                    │
+                                                    │ SQLAlchemy 2.0
+                                                    ▼
+                                           ┌──────────────────┐
+                                           │  PostgreSQL 15+  │
+                                           └──────────────────┘
+                                                    ▲
+                           ┌────────────────────────┴──────────────────────┐
+                           │         Pipeline  (POST /claims/{id}/analyze)  │
+                           │  CV (ResNet-50)                                │
+                           │    → Document Intelligence (stub + PyMuPDF)    │
+                           │    → Consistency Engine (R1–R9)                │
+                           │    → Risk Engine (5-feature weighted scoring)  │
+                           │    → Gemini Investigation (LLM narration only) │
+                           └───────────────────────────────────────────────┘
 ```
+
+The pipeline runs in a background thread in the same Python process. `POST /claims/{id}/analyze` returns `202 Accepted` immediately with an `analysis_id`, and the frontend polls `GET /claims/{id}/analysis/{analysis_id}` until the status is `completed` or `failed`.
 
 ---
 
 ## Tech stack
 
-| Layer        | Choice                                            |
-| ------------ | ------------------------------------------------- |
-| Frontend     | React 18, TypeScript 5.6, Vite 6, React Router 6  |
-| Backend API  | FastAPI, Pydantic v2, pydantic-settings           |
-| ORM          | SQLAlchemy 2.0                                    |
-| Migrations   | Alembic                                           |
-| Database     | PostgreSQL 15+                                    |
-| CV model     | PyTorch, ResNet-50 (ImageNet pretrained, fine-tuned) |
-| DocIntel     | PyMuPDF + deterministic filename-token stub       |
-| Consistency  | Pure Python rule engine                           |
-| Risk scoring | scikit-learn Isolation Forest (baseline fit) + frozen deterministic scoring |
-| LLM layer    | Gemini 2.5 Flash via `httpx`                      |
-| Tests        | pytest, pytest-asyncio, FastAPI `TestClient`      |
+| Layer          | Choice                                                         |
+| -------------- | -------------------------------------------------------------- |
+| Frontend       | React 18, TypeScript 5.6, Vite 6, React Router 6              |
+| Backend API    | FastAPI, Pydantic v2, pydantic-settings                        |
+| ORM            | SQLAlchemy 2.0                                                 |
+| Migrations     | Alembic (5 revisions)                                          |
+| Database       | PostgreSQL 15+                                                 |
+| CV model       | PyTorch, ResNet-50 (ImageNet pretrained, dual-head fine-tuned) |
+| DocIntel       | PyMuPDF + deterministic filename-token stub                    |
+| Consistency    | Pure Python rule engine (no external dependencies)             |
+| Risk scoring   | Deterministic 5-feature weighted formula (no sklearn at runtime)|
+| LLM layer      | Gemini 2.5 Flash via `httpx`                                   |
+| Tests          | pytest, FastAPI `TestClient`, SQLite in-memory                 |
 
 ---
 
@@ -125,107 +88,94 @@ trained CV checkpoint or a live Gemini key.
 
 ```
 claimsight/
-├── README.md                     # this file
-├── DEVLOG.md                     # what we built, what we'd improve
-├── claimsight_implementation.md  # long-form technical blueprint
+├── README.md
+├── DEVLOG.md
 ├── pytest.ini
 │
 ├── backend/
 │   ├── alembic.ini
-│   ├── alembic/                  # DB migrations (5 revisions)
+│   ├── alembic/versions/          # 5 DB migration revisions
 │   ├── app/
-│   │   ├── api/                  # routers: health, customers, policies,
-│   │   │                         #   vehicles, claims, documents, images,
-│   │   │                         #   cv, pipeline
-│   │   ├── core/                 # config (pydantic-settings)
-│   │   ├── db/                   # SQLAlchemy session + Base
-│   │   ├── models/               # ORM models
-│   │   ├── schemas/              # Pydantic v2 request/response models
-│   │   └── services/             # CV, document intelligence, consistency,
-│   │                             #   risk engine, Gemini client, pipeline
+│   │   ├── api/                   # routers: health, customers, policies,
+│   │   │                          #   vehicles, claims, documents, images,
+│   │   │                          #   cv, pipeline
+│   │   ├── core/                  # config (pydantic-settings)
+│   │   ├── db/                    # SQLAlchemy session + Base
+│   │   ├── models/                # ORM models
+│   │   ├── schemas/               # Pydantic v2 request/response models
+│   │   └── services/              # CV, document intelligence, consistency,
+│   │                              #   risk engine, Gemini client, pipeline
 │   ├── requirements.txt
 │   └── requirements-dev.txt
 │
 ├── frontend/
 │   ├── index.html
 │   ├── package.json
-│   ├── tsconfig.json
 │   ├── vite.config.ts
 │   └── src/
-│       ├── api/                  # typed fetch client
-│       ├── components/           # shared UI: Layout, PageShell,
-│       │                         #   StatusPill, RiskBandPill, etc.
-│       └── pages/                # 9 screens
+│       ├── api/                   # typed fetch client (no extra libs)
+│       ├── components/            # PageShell, StatusPill, RiskBandPill, etc.
+│       └── pages/                 # 9 screens
 │
 ├── ml/
-│   ├── data_card.md
-│   ├── inference/                # predictor + verification script
-│   ├── training/                 # train.py, model.py, dataset.py, evaluate.py
-│   ├── data/                     # processed CSVs and (gitignored) raw/
-│   ├── results/                  # training_history.json
-│   └── weights/                  # (gitignored) trained checkpoint
+│   ├── inference/                 # predictor.py + demo predictor
+│   ├── training/                  # train.py, model.py, dataset.py, config.py
+│   ├── data/processed/            # train/val/test CSVs (images gitignored)
+│   ├── results/training_history.json
+│   └── weights/                   # trained checkpoint (gitignored)
 │
 ├── scripts/
-│   └── generate_demo_data.py     # deterministic seed for 5 demo scenarios
+│   └── generate_demo_data.py      # deterministic seed for 5 demo scenarios
 │
 ├── tests/
-│   ├── conftest.py
-│   ├── backend/                  # ~260 backend tests
-│   └── ml/                       # ~21 CV tests
+│   ├── backend/                   # backend test suite (~16 test files)
+│   └── ml/                        # CV model tests
 │
-└── data/
-    ├── synthetic/.gitkeep
-    ├── processed/.gitkeep
-    └── uploads/.gitkeep          # runtime uploads land here
+└── data/uploads/                  # runtime file uploads (gitignored)
 ```
 
 ---
 
 ## Prerequisites
 
-| Tool       | Version           |
-| ---------- | ----------------- |
-| Python     | 3.11+ (tested on 3.14) |
-| Node.js    | 18+ (tested on 20) |
-| npm        | 9+                |
-| PostgreSQL | 15+               |
+| Tool       | Version                     |
+| ---------- | --------------------------- |
+| Python     | 3.11+ (tested on 3.14)      |
+| Node.js    | 18+                         |
+| npm        | 9+                          |
+| PostgreSQL | 15+                         |
 
-For the optional ML training path, a CUDA-capable PyTorch wheel is needed.
-Inference on CPU works.
+For the optional ML training path, a PyTorch wheel is needed (CPU inference works; CUDA speeds training significantly).
 
 ---
 
 ## Environment variables
 
-All environment variables live in `backend/.env` (template:
-`backend/.env.example`). **Never commit a real `.env`.**
+All variables live in `backend/.env`. **Never commit a `.env` file with real secrets.**
 
-| Name                       | Purpose                                                              | Default                                                            |
-| -------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `APP_ENV`                  | `development` / `production`                                         | `development`                                                      |
-| `APP_HOST`                 | uvicorn bind host                                                    | `0.0.0.0`                                                          |
-| `APP_PORT`                 | uvicorn bind port                                                    | `8000`                                                             |
-| `DATABASE_URL`             | SQLAlchemy connection string                                         | `postgresql+psycopg2://claimsight:claimsight@localhost:5432/claimsight_db` |
-| `CORS_ORIGINS`             | Comma-separated list of allowed frontend origins                     | `http://localhost:5173,http://localhost:3000`                      |
-| `UPLOAD_DIR`               | Where uploaded claim files are written                               | `../data/uploads` (relative to `backend/`)                         |
-| `GEMINI_API_KEY`           | Gemini 2.5 Flash API key (only required when `USE_DEMO_GEMINI=0`)    | unset                                                              |
-| `GEMINI_MODEL`             | Gemini model name                                                    | `gemini-2.5-flash`                                                 |
-| `GEMINI_BASE_URL`          | Gemini API base URL                                                  | `https://generativelanguage.googleapis.com`                        |
-| `GEMINI_TIMEOUT_SECONDS`   | Per-request timeout                                                  | `15.0`                                                             |
-| `GEMINI_RETRY_BACKOFF_SECONDS` | Wait between retry attempts                                      | `2.0`                                                              |
-| `USE_DEMO_CV`              | Use deterministic `_DemoCVPredictor` instead of the trained model    | `false`                                                            |
-| `USE_DEMO_GEMINI`          | Use canned Gemini response (no network call)                         | `false`                                                            |
+| Name                           | Purpose                                                               | Default                                                                      |
+| ------------------------------ | --------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `APP_ENV`                      | `development` / `production`                                          | `development`                                                                |
+| `APP_HOST`                     | uvicorn bind host                                                     | `0.0.0.0`                                                                    |
+| `APP_PORT`                     | uvicorn bind port                                                     | `8000`                                                                       |
+| `DATABASE_URL`                 | SQLAlchemy connection string                                          | `postgresql+psycopg2://claimsight:claimsight@localhost:5432/claimsight_db`   |
+| `CORS_ORIGINS`                 | Comma-separated list of allowed frontend origins                      | `http://localhost:5173,http://localhost:3000`                                 |
+| `UPLOAD_DIR`                   | Where uploaded claim files are written                                | `../data/uploads` (relative to `backend/`)                                   |
+| `GEMINI_API_KEY`               | Gemini 2.5 Flash API key (not required when `USE_DEMO_GEMINI=true`)   | unset                                                                        |
+| `GEMINI_MODEL`                 | Gemini model name                                                     | `gemini-2.5-flash`                                                           |
+| `GEMINI_BASE_URL`              | Gemini API base URL                                                   | `https://generativelanguage.googleapis.com`                                  |
+| `GEMINI_TIMEOUT_SECONDS`       | Per-request timeout                                                   | `15.0`                                                                       |
+| `GEMINI_RETRY_BACKOFF_SECONDS` | Wait between retry attempts                                           | `2.0`                                                                        |
+| `USE_DEMO_CV`                  | Use filename-based stub instead of the trained model                  | `false`                                                                      |
+| `USE_DEMO_GEMINI`              | Use a canned Gemini response (no network call)                        | `false`                                                                      |
 
-### Gemini setup
+### Getting a Gemini API key
 
-1. Generate an API key at
-   <https://aistudio.google.com/apikey>.
-2. Set `GEMINI_API_KEY=<your-key>` in `backend/.env`.
-3. Leave `USE_DEMO_GEMINI=0` (or unset) to use the real model.
+1. Visit <https://aistudio.google.com/apikey> and generate a key.
+2. Add `GEMINI_API_KEY=<your-key>` to `backend/.env`.
+3. Leave `USE_DEMO_GEMINI` unset (defaults to `false`).
 
-If you don't have a key, set `USE_DEMO_GEMINI=1` and the system will
-return a deterministic canned response so the rest of the pipeline can
-still be exercised offline.
+If you don't have a key, set `USE_DEMO_GEMINI=true` — the pipeline will complete with a deterministic canned summary.
 
 ---
 
@@ -233,25 +183,21 @@ still be exercised offline.
 
 ```bash
 # 1. Clone
-git clone https://github.com/cressica18/ClaimSight
-cd claimsight
+git clone https://github.com/cressica18/ClaimSight.git
+cd ClaimSight
 
 # 2. Backend
 cd backend
 python3 -m venv .venv
-source .venv/bin/activate           # Windows: .venv\Scripts\activate
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt -r requirements-dev.txt
-cp .env.example .env                # then edit with your values
+cp .env.example .env             # edit the values inside
 cd ..
 
 # 3. Frontend
 cd frontend
 npm install
 cd ..
-
-# 4. ML (only if you want to run the local predictor directly)
-# The backend uses the `ml` package via sys.path; no separate install
-# is required for inference or tests.
 ```
 
 ---
@@ -259,18 +205,18 @@ cd ..
 ## Database setup
 
 ```bash
-# Make sure PostgreSQL is running and you can connect as a superuser
-createdb claimsight_db
-createuser -P claimsight             # set a password when prompted
+# Make sure PostgreSQL is running, then run as a superuser (e.g. postgres)
+psql -U postgres -c "CREATE USER claimsight WITH PASSWORD 'claimsight';"
+psql -U postgres -c "CREATE DATABASE claimsight_db OWNER claimsight;"
+psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE claimsight_db TO claimsight;"
 
-# Apply the migrations
+# Apply migrations
 cd backend
 source .venv/bin/activate
 alembic upgrade head
 ```
 
-`backend/.env` should reference the same user/database/password you
-just created, e.g.:
+Set the matching connection string in `backend/.env`:
 
 ```
 DATABASE_URL=postgresql+psycopg2://claimsight:<your-password>@localhost:5432/claimsight_db
@@ -288,10 +234,10 @@ source .venv/bin/activate
 uvicorn app.main:app --reload --port 8000
 ```
 
-The API is served at <http://localhost:8000>.
+- API: <http://localhost:8000>
 - OpenAPI docs: <http://localhost:8000/docs>
 - Health check: `GET /health` → `{"status":"ok"}`
-- Mode check:   `GET /mode`   → `{app_env, demo_mode, use_demo_cv, use_demo_gemini}`
+- Mode flags: `GET /mode` → `{app_env, demo_mode, use_demo_cv, use_demo_gemini}`
 
 ### Frontend
 
@@ -300,20 +246,64 @@ cd frontend
 npm run dev
 ```
 
-The dev server runs at <http://localhost:5173>.
+Dev server at <http://localhost:5173>.
 
-### Demo data
+### Seed demo data
 
 ```bash
 cd backend
 source .venv/bin/activate
 python3 ../scripts/generate_demo_data.py --reset
+# or to also run the analysis pipeline on each demo claim:
+python3 ../scripts/generate_demo_data.py --reset --analyze
 ```
 
-This seeds five demo claims (CLM-DEMO-S1-LEGIT through
-CLM-DEMO-S5-MULTI) with full customer / vehicle / policy / accident /
-images / documents / repair-estimate / previous-claim graphs. Run with
-`--analyze` to also kick off the analysis pipeline for each.
+This seeds five scenario claims (`CLM-DEMO-S1-LEGIT` through `CLM-DEMO-S5-MULTI`) with a complete entity graph for each. The script is deterministic and idempotent — `--reset` wipes existing demo data before reseeding.
+
+---
+
+## Demo workflow
+
+1. **Start everything** (three terminals):
+   ```bash
+   # terminal 1 — backend
+   cd backend && source .venv/bin/activate && uvicorn app.main:app --reload --port 8000
+
+   # terminal 2 — frontend
+   cd frontend && npm run dev
+
+   # terminal 3 — seed
+   cd backend && source .venv/bin/activate && python3 ../scripts/generate_demo_data.py --reset
+   ```
+
+2. **Open <http://localhost:5173>**. The dashboard shows the five seeded claims. A "Demo data" badge appears in the sidebar when the backend is in demo mode (either `USE_DEMO_CV` or `USE_DEMO_GEMINI` is set).
+
+3. **Click into any demo claim**. On the Claim Analysis page, click **Start analysis**. The page polls the pipeline in real time and updates each stage as it completes.
+
+4. **Walk the evidence screens** — Image Analysis, Document Viewer, Risk Signals, Investigation Summary — then open the Decision Panel to record the human decision.
+
+5. **Try all five scenarios** to see different rule combinations fire:
+   - S1-LEGIT: legitimate claim, no signals
+   - S2-INFLATED: repair estimate well above the cost baseline (R4 fires)
+   - S3-MISMATCH: claimed damage area does not match any CV-detected damage (R1 fires)
+   - S4-PREV: same vehicle region already claimed within 6 months (R5 fires)
+   - S5-MULTI: multiple signals in combination
+
+---
+
+## Demo mode (offline)
+
+To run with no CV checkpoint and no Gemini key, add to `backend/.env`:
+
+```
+USE_DEMO_CV=true
+USE_DEMO_GEMINI=true
+```
+
+- **Demo CV**: predictions are derived from the uploaded image's filename (e.g. `small-dent.jpg` → `dent` / `minor`). The consistency rules, risk scoring, and evidence generation all run unchanged.
+- **Demo Gemini**: a canned investigation summary is built from the actual deterministic risk signals. It passes through the same validator that a real Gemini response would.
+
+`GET /mode` exposes which flags are active so the frontend can surface the demo badge.
 
 ---
 
@@ -322,115 +312,41 @@ images / documents / repair-estimate / previous-claim graphs. Run with
 ```bash
 # From the repo root
 source backend/.venv/bin/activate
-python3 -m pytest tests/backend tests/ml
+python3 -m pytest tests/backend tests/ml -q
 ```
 
-This is the full suite we run before every release. As of the last
-clean run it is **281 passed, 1 known failure**.
+Current result: **281 passed, 1 known failure**.
 
 ### Known failure: `test_scenario_1_legitimate_claim_low`
 
-The blueprint expects a legitimate claim to score `Low`. The frozen
-risk engine bumps a clean claim to `Medium` via the
-*low-data-confidence* default. The Phase 13 progress doc
-explains this is a calibration question, not a pipeline defect,
-and is intentionally left as-is.
+The test asserts that a clean, legitimate claim produces a `Low` risk band. The risk engine's low-data-confidence default bumps a claim with zero signals to `Medium` rather than leaving it at `Low`. This is a calibration issue (the weight or threshold for the default needs tuning), not a pipeline defect. It is intentionally left as-is rather than hidden.
 
-### Frontend type-check and build
+### Frontend
 
 ```bash
 cd frontend
-npx tsc --noEmit
-npm run build
+npx tsc --noEmit   # type check only
+npm run build      # full production build
 ```
 
-Both should run clean. The build emits `frontend/dist/`.
+Both run clean. There is no JS unit test framework in the repository; the real logic lives in the backend services.
 
 ---
 
-## Basic demo workflow
+## Known limitations
 
-1. **Backend on, database migrated, demo data seeded.**
-   ```bash
-   # terminal 1
-   cd backend && source .venv/bin/activate && uvicorn app.main:app --reload --port 8000
-   # terminal 2
-   cd frontend && npm run dev
-   # terminal 3
-   cd backend && source .venv/bin/activate && python3 ../scripts/generate_demo_data.py --reset
-   ```
-2. **Open the app at <http://localhost:5173>.** The dashboard shows
-   the five seeded claims; the sidebar shows a "Demo data" badge if
-   the backend is in demo mode.
-3. **Click into CLM-DEMO-S1-LEGIT.** The Claim Analysis page shows
-   the pipeline stages. Click *Start analysis* (or hit
-   `POST /claims/40/analyze` via `curl`); the page polls until the
-   analysis completes.
-4. **Walk the four evidence screens** — Image Analysis, Document
-   Viewer, Risk Signals, Investigation Summary — then open the
-   Decision Panel to record the final human decision.
-5. **Repeat for the four riskier scenarios** to see the consistency
-   rules fire (R1–R9) and the risk band climb.
+These are honest, known limitations as of the current codebase. None are hidden or worked around.
 
----
-
-## Demo mode
-
-To run the entire stack on a laptop with no CV checkpoint and no
-Gemini key, set in `backend/.env`:
-
-```
-USE_DEMO_CV=1
-USE_DEMO_GEMINI=1
-```
-
-The CV service will return deterministic predictions derived from
-the image filename (e.g. `small-dent.jpg` → `dent` / `minor`), and
-the Gemini client will return a canned investigation summary built
-from the deterministic risk signals. The pipeline, evidence
-rendering, and decision flow are otherwise unchanged.
-
-`GET /mode` exposes the active flags so the frontend can show a
-"Demo data" badge.
-
----
-
-## Known limitations / future improvements
-
-These are honestly held limitations as of the current state of the
-codebase. They are **not** addressed in this drop and are documented
-as future work.
-
-- **Document Intelligence is a stub.** It extracts a `POL-XXXX` token
-  from the filename of `policy` documents and otherwise writes an
-  honest empty `extracted_fields` set with `raw_confidence=0.5`.
-  Real OCR / DocIntel is a future task.
-- **Single-process concurrency.** Pipeline runs execute in a thread
-  inside the same Python process as the API. Multi-process
-  deployments (gunicorn workers) would need `SELECT … FOR UPDATE` or
-  an external queue.
-- **Synchronous-with-202 pattern.** If the process dies mid-run, an
-  Analysis row stays `running` until the next request triggers the
-  `_init_state` guard. A startup sweeper that flips long-running rows
-  to `failed (interrupted)` is a future task.
-- **Demo-mode CV is a small helper, not production code.** The
-  filename-based predictor sits behind an env-var toggle and is
-  intended for the demo laptop only.
-- **No live Gemini verification in CI.** All Gemini tests use mocks
-  or the demo stub; live integration was not run as part of the
-  automated test suite.
-- **Schema-drift risk.** A model change that ships without a
-  matching alembic revision will be silent in tests (which use
-  `Base.metadata.create_all`) and broken in production. A CI check
-  that diffs the model against the head migration is a future
-  improvement.
-- **No Docker / production deployment configuration.** The repo is
-  runnable as documented above; containerisation and a reverse-proxy
-  setup are intentionally out of scope.
+- **Document intelligence is a stub.** The extraction layer reads a `POL-XXXX` token from the filename of policy documents and otherwise returns an empty field set. PyMuPDF is included but no real OCR or document-intelligence provider is wired in. Rules that depend on extracted fields (especially R9 — document field conflicts) have limited signal in the current implementation.
+- **Single-process concurrency.** The pipeline runs in a thread inside the same uvicorn process. A partial unique index (`uq_analyses_one_running_per_claim`) provides an additional guard against concurrent running analyses, but the overall design is single-process. Running multiple uvicorn workers would need a cross-process lock (e.g. `SELECT … FOR UPDATE` on the claim row) or an external queue.
+- **No startup sweeper.** If the process dies mid-pipeline, the `Analysis` row stays in `running` state. A startup job that flips stale `running` rows to `failed` is a future task.
+- **No authentication.** The prototype assumes a single trusted user on a local machine. There is no session management, per-user audit trail, or claim-level locking.
+- **CV model performance is limited.** The model was trained on two small public Kaggle datasets with a masked-loss strategy (each dataset provides labels for only one head). Damage-type macro-F1 on the validation set reached ~0.19; severity accuracy reached ~0.70. These are honest numbers — the model is suitable for demo purposes but not production use.
+- **No live Gemini calls in CI.** All Gemini tests use mocks or the demo stub.
+- **No Docker / production configuration.** The repository is runnable as documented above. Containerisation is out of scope.
 
 ---
 
 ## License
 
-Internal prototype — no license declared. Add a `LICENSE` file
-before any external distribution.
+Internal prototype — no license declared. Add a `LICENSE` file before any external distribution.
