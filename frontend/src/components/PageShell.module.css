@@ -1,0 +1,25 @@
+.page {
+  max-width: 1200px;
+}
+
+.header {
+  margin-bottom: var(--space-8);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-6);
+}
+
+.title {
+  font-size: var(--text-2xl);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.description {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.content {
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}

@@ -1,0 +1,2 @@
+# File upload directory — created at runtime, gitignored
+# Structure: data/uploads/{claim_id}/{filename}

@@ -1,0 +1,98 @@
+# ─── Environment files (NEVER commit secrets/credentials) ─────────────────
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+*.env
+!.env.example
+
+# API keys, tokens, secrets
+*.pem
+*.key
+*.crt
+secrets/
+config/local.*
+
+# ─── Python ────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+*.so
+*.dylib
+
+# ─── Node / Frontend ───────────────────────────────────────────────────────
+node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+.npm
+.eslintcache
+.parcel-cache
+.vite/
+
+# ─── IDE / OS ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ─── Data / Uploads / Databases ────────────────────────────────────────────
+data/uploads/*
+!data/uploads/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/synthetic/*
+!data/synthetic/.gitkeep
+*.sqlite3
+*.sqlite
+*.db
+*.sqlitedb
+postgres_data/
+
+# ─── ML artefacts ──────────────────────────────────────────────────────────
+ml/weights/
+ml/runs/
+ml/checkpoints/
+*.pt
+*.pth
+*.onnx
+*.pkl
+*.joblib
+ml/data/raw/
+!ml/data/raw/.gitkeep
+
+# ─── Logs / Runtime ───────────────────────────────────────────────────────
+*.log
+logs/
+*.pid
+*.seed
+*.pid.lock
+
+# ─── Alembic ──────────────────────────────────────────────────────────────
+backend/alembic/versions/__pycache__/

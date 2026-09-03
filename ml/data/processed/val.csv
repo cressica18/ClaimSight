@@ -1,0 +1,484 @@
+image_path,severity_label,has_damage_label,has_severity_label,scratch,dent,crack,shattered_glass,bumper_damage,panel_damage,headlight_damage,no_damage
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0037.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/743.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0008.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0148.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0080.jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0231.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/717.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0313.jpeg,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1103.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/84.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/images - 2022-12-13T215957.493.jpeg,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/374.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/images (88).jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1025.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/02-moderate/0015.jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0176.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0364.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/329.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0200.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/images - 2022-12-12T151411.669.jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0166.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0004.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0298.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0171.jpeg,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1245.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/download (35).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/509.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0205.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1182.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/01-minor/0048.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/679.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/244.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/02-moderate/images (65).jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/582.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1088.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0268.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0134.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0185.jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/470.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/02-moderate/download (18).jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/810.jpeg,-1,1,0,0,0,0,1,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/images (76).jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/956.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/291.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0266.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1158.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1180.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/948.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/133.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1192.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/download (5).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0282.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0080.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/10.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/641.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/307.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0215.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/711.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/982.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/643.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/332.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0303.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/02-moderate/0051.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/851.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/406.jpeg,-1,1,0,0,0,0,1,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/246.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0226.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0163.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1217.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0220.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0252.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0051.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0095.jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/924.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0111.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0240.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/485.jpeg,-1,1,0,0,0,0,1,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/03-severe/0005.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/348.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0157.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0260.jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/611.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/621.jpeg,-1,1,0,0,0,0,1,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/219.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/303.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/images (9).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0048.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/267.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/467.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/images (3).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1034.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/210.jpeg,-1,1,0,0,0,0,1,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/755.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1395.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0211.jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/images (33).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/download (38).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1164.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0306.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/50.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/420.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/01-minor/0004.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/images - 2022-12-12T151412.931.jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1196.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0300.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/223.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/186.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1123.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/518.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0139.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/57.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1238.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0241.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1478.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/931.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1213.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/795.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/411.jpeg,-1,1,0,0,0,0,1,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1159.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0103.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1132.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/images (54).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/886.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/images (36).jpeg,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/758.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0149.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/489.jpeg,-1,1,0,0,0,0,1,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/02-moderate/0055.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/788.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/494.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/944.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/02-moderate/0008.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1255.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1109.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/02-moderate/0037.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1441.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1354.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/images (23).jpeg,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0149.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/03-severe/0040.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0129.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0222.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0145.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1511.jpeg,-1,1,0,0,0,0,1,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/a93df47478d8427ebdae3c34fd99faa2_thb.jpg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1254.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/996.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0032.jpeg,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/907.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1205.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/381.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/70.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0242.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/images (83).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/images (24).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/984.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0229.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0289.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0249.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/988.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/01-minor/0042.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/782.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0071.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/41.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/images - 2022-12-13T215957.811.jpeg,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1131.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1145.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1394.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1058.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1453.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/868.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/images (7).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0018.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1331.jpeg,-1,1,0,0,0,0,1,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0214.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/117.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1377.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0009.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0289.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0102.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/998.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0253.jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1142.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/354.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1005.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1320.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1099.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/images (35).jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0191.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/images (98).jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/images (51).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0179.jpeg,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1106.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0092.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/721.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0190.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/01-minor/images (43).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/9b8bc805f7bf4c7ba7ecd1224a99b0c6_thb.jpg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1483.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0182.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/432.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/images (79).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0056.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/51.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1397.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0325.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/282.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/140.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/02-moderate/0031.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0137.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1422.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/168.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0273.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/01-minor/0025.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/images (67).jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1235.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/417.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/994.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/images (34).jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/311.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/812.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0031.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/439.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0052.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1277.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/105.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/4a6b5f174a914cd393dbd11f32902c7e_thb.jpg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0234.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1274.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/670.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/02-moderate/0003.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/images (92).jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/images (87).jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/687.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1510.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1049.jpeg,-1,1,0,0,0,0,1,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0150.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/892.jpeg,-1,1,0,0,0,0,1,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0265.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/468.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/images (14).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/517.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0343.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/624.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/83.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/816.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0087.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/127.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/164.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0321.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/918.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1433.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/213.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/03-severe/download (2).jpeg,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/01-minor/download.jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/download (7).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0354.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1033.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0133.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/03-severe/0057.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0015.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1382.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1338.jpeg,-1,1,0,0,0,0,1,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0269.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/866.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1340.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0165.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1065.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0108.jpeg,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/744.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/download (1).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/555.jpeg,-1,1,0,0,0,0,1,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0162.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/343.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/111.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0266.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/images (31).jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0020.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/110.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/02-moderate/images (4).jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0260.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/download (30).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/01-minor/0032.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0063.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1376.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1497.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/118.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/images (11).jpeg,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0192.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1117.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/02-moderate/0027.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/images (71).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/903.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/images (77).jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0191.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0159.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0123.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0004.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1223.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1440.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/24.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/images (27).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/784.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0313.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/80.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/03-severe/0023.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0002.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0127.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/847.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/255.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0110.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/download (25).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0177.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1355.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0076.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0106.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/263.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/876.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/625.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/958.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/947.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/617.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/02-moderate/0026.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/330.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0167.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1309.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1375.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1112.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/960.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1170.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/317.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0208.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1124.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/979.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0059.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/images (55).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0090.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1135.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1012.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1061.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0250.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/images (19).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/651.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0233.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0159.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0154.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0022.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0001.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0219.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1299.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/images (48).jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0244.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0373.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/download (20).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/546.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0276.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/497.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1020.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0238.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0377.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/download (2).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0076.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/720.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/896.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0148.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/436.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/22.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/604.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/999.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0043.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/images - 2022-12-12T151411.784.jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1008.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/796.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0312.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0071.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0104.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0272.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/298.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/images - 2022-12-12T151420.112.jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/01-minor/0034.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/03-severe/0047.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/189.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/100.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/603.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/815.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/01-minor/0011.jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1271.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/962.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/images (17).jpeg,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1372.jpeg,-1,1,0,0,0,0,1,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0355.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0084.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0066.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1162.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/347.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/695.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/images (13).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0048.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/f805107b874f40d3a3da7d25cfa524de_thb.jpg,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0218.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0275.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/download (21).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1319.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/01-minor/0029.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/632bbda7c6314b97a49ba3af3712366f_thb.jpg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0261.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0254.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1175.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1244.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0199.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0070.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1232.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0286.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0013.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/712.jpeg,-1,1,0,0,0,0,1,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/download (4).jpeg,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0129.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/785.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/521.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0225.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1211.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0055.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1336.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0079.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1266.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0032.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1230.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/510.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1285.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0044.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1352.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/286.jpeg,-1,1,0,0,0,0,1,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0173.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1491.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/807.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0160.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0084.jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/6.jpeg,-1,1,0,0,0,0,1,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0193.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/181.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1043.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/778.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/038ac5f01d694b8180fc6f0e2cc71976_thb.jpg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1185.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/473.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0049.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/images (89).jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0194.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0379.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1415.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0186.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/images (52).jpeg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/444.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/156.jpeg,-1,1,0,0,0,0,1,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0342.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/8bfbee9445b040468ea596d7ffff7f04_thb.jpg,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/01-minor/images (75).jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1069.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0302.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/113.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1356.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/images (34).jpeg,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0044.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/02-moderate/0041.JPEG,1,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0119.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1438.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1143.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/validation/03-severe/0022.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1141.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1344.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/0039.JPEG,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/791.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/03-severe/0195.JPEG,2,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/96.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/913.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/932.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1250.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/1432.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/a5dbc724-654f-4886-a744-2dd91f81b697.jpeg,0,0,1,0,0,0,0,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/817.jpeg,-1,1,0,0,0,0,0,0,0,0,1
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-assessment/image/911.jpeg,-1,1,0,0,0,0,1,0,0,0,0
+/Users/dell/Documents/ClaimSight/ml/data/raw/car-damage-severity-dataset/data3a/training/01-minor/download (8).jpeg,0,0,1,0,0,0,0,0,0,0,0

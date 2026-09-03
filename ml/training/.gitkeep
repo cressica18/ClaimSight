@@ -1,0 +1,4 @@
+# ML training scripts — Phase 4
+# Files to be added:
+#   prepare_data.py   — dataset download, remapping, train/val/test split
+#   train_cv_model.py — ResNet-50 dual-head fine-tuning per Section 2.2–2.5

@@ -1,0 +1,105 @@
+/* Global design tokens and reset — Phase 1 foundation.
+ *
+ * Design direction (from blueprint Section 11.2):
+ * - Deep navy/charcoal base
+ * - Muted amber/gold for medium risk
+ * - Muted red for high risk
+ * - Forest green for low risk
+ * - "Source Serif 4" / "Newsreader" for headings, "Inter" for UI
+ *
+ * Full design implementation happens in Phase 9.
+ * This file establishes the token names so Phase 9 can fill them in.
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:wght@400;600&display=swap");
+
+:root {
+  /* ── Colour tokens ──────────────────────────────────────────────── */
+  --color-bg: #0f1117;
+  --color-surface: #1a1d27;
+  --color-surface-raised: #21263a;
+  --color-border: #2c3045;
+
+  --color-text-primary: #e8eaf0;
+  --color-text-secondary: #8b92a8;
+  --color-text-muted: #555d78;
+
+  --color-accent: #4a6fa5;
+
+  /* Risk bands */
+  --color-risk-low: #4a7c59;
+  --color-risk-low-bg: rgba(74, 124, 89, 0.12);
+  --color-risk-medium: #b08d3a;
+  --color-risk-medium-bg: rgba(176, 141, 58, 0.12);
+  --color-risk-high: #a34343;
+  --color-risk-high-bg: rgba(163, 67, 67, 0.12);
+
+  /* ── Typography ─────────────────────────────────────────────────── */
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-serif: "Source Serif 4", Georgia, serif;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+
+  /* ── Spacing ────────────────────────────────────────────────────── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+
+  /* ── Radii ──────────────────────────────────────────────────────── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* ── Motion (blueprint: subtle 150-200ms) ───────────────────────── */
+  --transition-base: 160ms ease;
+}
+
+/* ── Reset ──────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  line-height: 1.3;
+}

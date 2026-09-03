@@ -1,0 +1,3 @@
+# ML inference module — Phase 4
+# Files to be added:
+#   inference.py — loads trained weights, runs preprocessing + forward pass per Section 2.6

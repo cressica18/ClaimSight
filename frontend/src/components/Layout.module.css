@@ -1,0 +1,106 @@
+.shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────────── */
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background-color: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-6) var(--space-4);
+  gap: var(--space-8);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.logoMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-accent);
+  font-family: var(--font-serif);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.logoText {
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* ── Nav ──────────────────────────────────────────────────────────────── */
+.navList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.navLink {
+  display: block;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  transition: background-color var(--transition-base),
+    color var(--transition-base);
+}
+
+.navLink:hover {
+  background-color: var(--color-surface-raised);
+  color: var(--color-text-primary);
+}
+
+.navLinkActive {
+  background-color: var(--color-surface-raised);
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+/* ── Main ─────────────────────────────────────────────────────────────── */
+.main {
+  flex: 1;
+  padding: var(--space-8);
+  overflow-y: auto;
+}
+
+/* ── Demo badge (Phase 13) ─────────────────────────────────────────────
+ * Pinned to the bottom of the sidebar so it stays visible without
+ * competing with the primary nav for attention. */
+.demoBadge {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--color-risk-medium);
+  background-color: var(--color-risk-medium-bg);
+  border: 1px solid var(--color-border);
+  align-self: flex-start;
+}
+
+.demoBadgeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-risk-medium);
+  flex-shrink: 0;
+}

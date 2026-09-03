@@ -1,0 +1,89 @@
+{
+  "test_loss": 0.7783818002790213,
+  "test_damage_loss": 0.019697085313964635,
+  "test_severity_loss": 0.7586847115308046,
+  "n_damage_samples": 251,
+  "n_severity_samples": 234,
+  "damage_macro_f1": 0.23505738377571106,
+  "damage_per_class": {
+    "scratch": {
+      "f1": 0.0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0
+    },
+    "dent": {
+      "f1": 0.0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0
+    },
+    "crack": {
+      "f1": 0.0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0
+    },
+    "shattered_glass": {
+      "f1": 0.8936169743537903,
+      "precision": 0.9545454382896423,
+      "recall": 0.8399999737739563,
+      "tp": 21,
+      "fp": 1,
+      "fn": 4
+    },
+    "bumper_damage": {
+      "f1": 0.0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0
+    },
+    "panel_damage": {
+      "f1": 0.0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0
+    },
+    "headlight_damage": {
+      "f1": 0.0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0
+    },
+    "no_damage": {
+      "f1": 0.9868420958518982,
+      "precision": 0.97826087474823,
+      "recall": 0.9955752491950989,
+      "tp": 225,
+      "fp": 5,
+      "fn": 1
+    }
+  },
+  "severity_accuracy": 0.6752136945724487,
+  "severity_per_class": {
+    "minor": {
+      "accuracy": 0.8904109597206116,
+      "count": 73
+    },
+    "moderate": {
+      "accuracy": 0.6202531456947327,
+      "count": 79
+    },
+    "severe": {
+      "accuracy": 0.5365853905677795,
+      "count": 82
+    }
+  }
+}
