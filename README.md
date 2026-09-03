@@ -101,9 +101,6 @@ trained CV checkpoint or a live Gemini key.
         └────────────────────────────────────────────────────────────────┘
 ```
 
-A long-form blueprint lives at
-[`claimsight_implementation.md`](./claimsight_implementation.md).
-
 ---
 
 ## Tech stack
