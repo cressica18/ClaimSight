@@ -236,7 +236,7 @@ still be exercised offline.
 
 ```bash
 # 1. Clone
-git clone https://github.com/<your-org>/claimsight.git
+git clone https://github.com/cressica18/ClaimSight
 cd claimsight
 
 # 2. Backend
