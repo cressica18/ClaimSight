@@ -443,7 +443,7 @@ def _low_data_confidence_fraction(ctx: ClaimContext) -> float:
     total = 0
     for doc in ctx.documents:
         total += 1
-        if not doc.extracted_fields or (doc.raw_confidence is not None and doc.raw_confidence < 0.5):
+        if doc.extracted_fields is None or (doc.raw_confidence is not None and doc.raw_confidence < 0.5):
             low += 1
     for dmg in ctx.image_damages:
         total += 1
