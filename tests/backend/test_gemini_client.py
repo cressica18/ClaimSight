@@ -825,12 +825,16 @@ def test_generate_investigation_returns_none_on_claim_not_found(db_session):
 # ─── Misc: configuration errors ───────────────────────────────────────────
 
 
-def test_client_without_api_key_and_default_caller_raises():
-    """Default caller + no api_key → GeminiError (programmer error)."""
+def test_client_without_api_key_returns_none_gracefully():
+    """Default caller + no api_key → generate() returns None.
+
+    Gemini failures must NOT propagate; the pipeline handles a
+    None output by writing a null investigation summary, so the
+    claim still completes normally.
+    """
     client = GeminiClient(api_key="", caller=None)  # forces default caller
-    # The client defers the check until generate is called.
-    with pytest.raises(GeminiError):
-        client.generate(_make_input())
+    result = client.generate(_make_input())
+    assert result is None
 
 
 def test_client_with_injected_caller_does_not_require_api_key():

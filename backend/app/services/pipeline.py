@@ -372,9 +372,19 @@ def _run_steps(
     # already handles the None case and writes a row with
     # `summary_text=None` so the UI has something to attach to.
     _set_step(analysis, "investigation", db)
-    output = gemini_client.generate_investigation(
-        claim_id, db, client=gemini_client_obj
-    )
+    try:
+        output = gemini_client.generate_investigation(
+            claim_id, db, client=gemini_client_obj
+        )
+    except Exception as exc:
+        # Gemini failures must not break the deterministic pipeline.
+        # Log and return None so the claim still completes with
+        # risk score, evidence, and a null investigation summary.
+        logger.warning(
+            "Gemini investigation generation failed for claim %d: %s",
+            claim_id, exc,
+        )
+        output = None
     inv = gemini_client.persist_investigation(output, db, claim=claim)
 
     # Step 11: complete

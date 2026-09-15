@@ -570,15 +570,17 @@ class GeminiClient:
         # First attempt.
         try:
             raw = self._caller(system_prompt, user_prompt)
-        except _RetryableNetworkError as e:
-            # Network failure → wait → retry once. If retry also fails
-            # we return None.
-            logger.warning("Gemini network error (attempt 1): %s", e)
+        except (GeminiError, _RetryableNetworkError) as e:
+            # Network failure or configuration error (e.g. missing/
+            # invalid API key, rate limit) → wait → retry once.
+            # If retry also fails we return None gracefully so the
+            # pipeline completes without the Gemini narrative.
+            logger.warning("Gemini error (attempt 1): %s", e)
             self._sleep(self.backoff_seconds)
             try:
                 raw = self._caller(system_prompt, user_prompt)
-            except _RetryableNetworkError as e2:
-                logger.warning("Gemini network error (attempt 2): %s", e2)
+            except (GeminiError, _RetryableNetworkError) as e2:
+                logger.warning("Gemini error (attempt 2): %s", e2)
                 return None
         last_text = raw
 
@@ -593,8 +595,8 @@ class GeminiClient:
         repair = _build_repair_prompt(last_text or "", last_error or "unknown error")
         try:
             raw2 = self._caller(system_prompt, repair)
-        except _RetryableNetworkError as e:
-            logger.warning("Gemini network error (repair attempt): %s", e)
+        except (GeminiError, _RetryableNetworkError) as e:
+            logger.warning("Gemini error (repair attempt): %s", e)
             return None
         last_text = raw2
         outcome2 = self._parse_and_validate(raw2, valid_rule_ids=valid_rule_ids)
@@ -698,6 +700,11 @@ class GeminiClient:
             if resp.status_code in (500, 502, 503, 504):
                 raise _RetryableNetworkError(
                     f"Gemini {resp.status_code}: {resp.text[:200]}"
+                )
+            if resp.status_code == 429:
+                # Rate limit — retryable.
+                raise _RetryableNetworkError(
+                    f"Gemini 429: rate limited, {resp.text[:200]}"
                 )
             if resp.status_code >= 400:
                 # 4xx — configuration / bad request. Don't retry.
