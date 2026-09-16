@@ -47,7 +47,7 @@ The two datasets do not overlap, so each image only has labels for one head. A m
 
 **Training.** Two stages: stage 1 freezes the backbone and trains only the two heads (5 epochs, LR 1e-3); stage 2 unfreezes layers 3 and 4 of the backbone and fine-tunes everything at LR 1e-5 (15 epochs). Total: 20 epochs.
 
-**Actual results (from `ml/results/training_history.json`):**
+**Actual results:**
 - Best validation damage-type macro-F1: ~0.19 (at epoch 3 of stage 1)
 - Best validation severity accuracy: ~0.70 (at epoch 7 of stage 2)
 

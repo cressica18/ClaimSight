@@ -552,13 +552,13 @@ class GeminiClient:
         if _settings.use_demo_gemini:
             return self._generate_demo(input)
 
-        if not self.api_key and self._caller.__name__ != "_build_default_caller":
-            # Caller-injected path doesn't need a real key.
-            pass
-        # No caller AND no API key → cannot talk to Gemini. Surface
-        # this as a configuration error so the pipeline can fail fast.
-        if self._caller is None and not self.api_key:
-            raise GeminiError("gemini_api_key is not configured")
+        # If the caller was injected (tests/demo), it may work without a
+        # key. If we're using the default httpx caller with no key,
+        # there's no way to reach Gemini — return None so the
+        # deterministic pipeline completes with a null narrative.
+        if self.api_key is None and self._caller.__name__ == "caller":
+            logger.warning("gemini_api_key is not configured; skipping Gemini narrative")
+            return None
 
         valid_rule_ids = {s["rule_id"] for s in input.risk_signals}
         user_prompt = _build_user_prompt(input)
@@ -570,17 +570,25 @@ class GeminiClient:
         # First attempt.
         try:
             raw = self._caller(system_prompt, user_prompt)
-        except (GeminiError, _RetryableNetworkError) as e:
-            # Network failure or configuration error (e.g. missing/
-            # invalid API key, rate limit) → wait → retry once.
+        except GeminiError as e:
+            # Configuration error (missing/invalid key) is permanent
+            # — no retry will help. Return None so the pipeline
+            # completes with a null narrative instead of breaking.
+            logger.warning("Gemini configuration error: %s", e)
+            return None
+        except _RetryableNetworkError as e:
+            # Network failure or 5xx → wait → retry once.
             # If retry also fails we return None gracefully so the
             # pipeline completes without the Gemini narrative.
-            logger.warning("Gemini error (attempt 1): %s", e)
+            logger.warning("Gemini network error (attempt 1): %s", e)
             self._sleep(self.backoff_seconds)
             try:
                 raw = self._caller(system_prompt, user_prompt)
-            except (GeminiError, _RetryableNetworkError) as e2:
-                logger.warning("Gemini error (attempt 2): %s", e2)
+            except GeminiError as e2:
+                logger.warning("Gemini configuration error (repair): %s", e2)
+                return None
+            except _RetryableNetworkError as e2:
+                logger.warning("Gemini network error (attempt 2): %s", e2)
                 return None
         last_text = raw
 
@@ -595,8 +603,13 @@ class GeminiClient:
         repair = _build_repair_prompt(last_text or "", last_error or "unknown error")
         try:
             raw2 = self._caller(system_prompt, repair)
-        except (GeminiError, _RetryableNetworkError) as e:
-            logger.warning("Gemini error (repair attempt): %s", e)
+        except GeminiError as e:
+            # Configuration error — return None gracefully.
+            logger.warning("Gemini configuration error (repair): %s", e)
+            return None
+        except _RetryableNetworkError as e:
+            # Network error during repair — return None gracefully.
+            logger.warning("Gemini network error (repair attempt): %s", e)
             return None
         last_text = raw2
         outcome2 = self._parse_and_validate(raw2, valid_rule_ids=valid_rule_ids)

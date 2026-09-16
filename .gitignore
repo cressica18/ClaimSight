@@ -79,6 +79,9 @@ postgres_data/
 ml/weights/
 ml/runs/
 ml/checkpoints/
+ml/results/
+ml/data/results/
+ml/data_card.md
 *.pt
 *.pth
 *.onnx
@@ -96,3 +99,7 @@ logs/
 
 # ─── Alembic ──────────────────────────────────────────────────────────────
 backend/alembic/versions/__pycache__/
+
+# ─── AI agent workspace ──────────────────────────────────────────
+.claude/
+docs/internal-development-notes.md

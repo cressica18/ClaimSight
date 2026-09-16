@@ -50,6 +50,7 @@ _DEMO_CV_TABLE: dict[str, tuple[str, str, float]] = {
     "bumper-dent":  ("bumper_damage",  "moderate",  0.88),
     "bumper":       ("bumper_damage",  "moderate",  0.88),
     "front-damage": ("dent",           "minor",     0.89),
+    "front-end-damage": ("dent",      "minor",     0.89),
     "panel":        ("panel_damage",   "moderate",  0.87),
     "glass":        ("shattered_glass","severe",    0.94),
     "headlight":    ("headlight_damage","minor",    0.90),
@@ -185,7 +186,13 @@ def run_cv_on_image(
 
     full_path = upload_base / relative_path
 
-    if not full_path.exists():
+    # The demo predictor only uses path.name for its lookup table
+    # and never reads the actual image file, so skip the existence
+    # check when running in demo mode. This ensures deterministic
+    # demo results even when the synthetic images are stored at
+    # UUID-prefixed paths that don't match the region_ref filename.
+    is_demo = isinstance(predictor, _DemoCVPredictor)
+    if not is_demo and not full_path.exists():
         logger.error("Image file not found: %s (resolved from %s)", full_path, actual_image_path)
         failed_dmg = Damage(
             claim_id=claim_id,

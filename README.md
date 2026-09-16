@@ -17,19 +17,19 @@ The full pipeline:
 1. **Images** — accident photos are analysed by a fine-tuned ResNet-50 computer-vision model that predicts damage type (8 classes) and severity (minor / moderate / severe).
 2. **Documents** — uploaded claim forms, repair estimates, and policy documents pass through a limited deterministic extraction layer. Currently this reads a policy-number token from filenames; full OCR-based field extraction is a future task.
 3. **Consistency rules (R1–R9)** — nine deterministic rules cross-check all the evidence: do the photos match the claimed damage? Does the repair estimate cost match the baseline for this type of damage? Has the same vehicle had the same damage repaired before? And so on.
-4. **Risk score** — a five-feature, fixed-weight scoring formula (no machine learning) turns the rule firings into a 0–100 score and a Low / Medium / High band.
-5. **Gemini narrative** — Gemini 2.5 Flash writes a 3–6 sentence investigation summary, citing only the rule firings and evidence already computed. The recommendation (approve / review / investigate) is computed deterministically from the risk band; Gemini's value is overwritten.
+4. **Risk score** — a deterministic, explainable formula turns the rule firings into a 0–100 score and a Low / Medium / High band. It defines five named feature slots with blueprint weights; `f5` (anomaly/Isolation Forest) is currently a no-op, so the four active features are proportionally rescaled.
+5. **Gemini narrative** — Gemini 2.5 Flash is prompted to write a 3–6 sentence investigation summary, citing only the rule firings and evidence already computed. The recommendation (`normal` / `manual_review` / `investigate`) is computed deterministically from the risk band; Gemini's value is overwritten.
 6. **Human decision** — an officer reviews all the evidence on a single page and records one of four verdicts: Approve, Manual review, Investigate, or Deny.
 
 ---
 
 ## Key features
 
-- **CRUD for the full claims entity graph** — customers, vehicles, policies, claims, accidents, images, documents, repair estimates, and previous claims.
+- **Claim graph and evidence workflows** — create/list customers, vehicles, policies, and claims; upload/list/get images and documents; retrieve previous claims, risk evidence, and investigations; and record officer decisions. Accident and repair-estimate records are created by demo/seed paths, but no dedicated API endpoints are exposed.
 - **Image upload + CV inference** — PyTorch ResNet-50 with dual heads (damage type + severity). A demo predictor (filename-based, no checkpoint required) is available for offline review.
-- **Document upload + extraction** — PyMuPDF is included. The current extraction layer is a deterministic stub: it reads a `POL-XXXX` token from the filename of policy documents and otherwise returns an honest empty field set. Real OCR is a documented future task.
+- **Document upload + extraction** — the current extraction layer is a deterministic filename-token stub: it reads a `POL-XXXX` token from policy-document filenames and otherwise returns an honest empty field set. No PDF parser, OCR engine, or document-intelligence provider is currently wired in; real extraction is a future task.
 - **Nine deterministic consistency rules (R1–R9)** — pure Python, unit-testable, no LLM calls.
-- **Frozen risk engine** — five named, fixed-weight features, 0–100 score, Low / Medium / High bands. Fully explainable; each contributing factor is labelled with the underlying risk signals and claim data that drove it.
+- **Frozen risk engine** — five named feature slots with blueprint weights, 0–100 score, and Low / Medium / High bands. `f5` (anomaly/Isolation Forest) is currently a no-op, so the four active features are proportionally rescaled. Fully explainable; each contributing factor is labelled with the underlying risk signals and claim data that drove it.
 - **Gemini investigation layer** — optional, mockable. Strict prompt that forbids inventing numbers or making the final call. Fails gracefully (summary set to null; pipeline still completes).
 - **Nine-screen React UI** — Dashboard, Claims List, New Claim, Claim Analysis, Image Analysis, Document Viewer, Risk Signals, Investigation Summary, Decision Panel.
 - **Demo mode** — two env-var toggles replace the CV model and Gemini API with deterministic stubs so the full pipeline can run offline.
@@ -55,9 +55,9 @@ The full pipeline:
                            ┌────────────────────────┴──────────────────────┐
                            │         Pipeline  (POST /claims/{id}/analyze)  │
                            │  CV (ResNet-50)                                │
-                           │    → Document Intelligence (stub + PyMuPDF)    │
+                           │    → Document Intelligence (filename-token stub) │
                            │    → Consistency Engine (R1–R9)                │
-                           │    → Risk Engine (5-feature weighted scoring)  │
+                           │    → Risk Engine (four active features + f5 stub)│
                            │    → Gemini Investigation (LLM narration only) │
                            └───────────────────────────────────────────────┘
 ```
@@ -76,7 +76,7 @@ The pipeline runs in a background thread in the same Python process. `POST /clai
 | Migrations     | Alembic (5 revisions)                                          |
 | Database       | PostgreSQL 15+                                                 |
 | CV model       | PyTorch, ResNet-50 (ImageNet pretrained, dual-head fine-tuned) |
-| DocIntel       | PyMuPDF + deterministic filename-token stub                    |
+| DocIntel       | Deterministic filename-token stub (no PDF parser/OCR wired in)  |
 | Consistency    | Pure Python rule engine (no external dependencies)             |
 | Risk scoring   | Deterministic 5-feature weighted formula (no sklearn at runtime)|
 | LLM layer      | Gemini 2.5 Flash via `httpx`                                   |
@@ -121,8 +121,7 @@ claimsight/
 │   ├── inference/                 # predictor.py + demo predictor
 │   ├── training/                  # train.py, model.py, dataset.py, config.py
 │   ├── data/processed/            # train/val/test CSVs (images gitignored)
-│   ├── results/training_history.json
-│   └── weights/                   # trained checkpoint (gitignored)
+│   ├── weights/                   # trained checkpoint (gitignored)
 │
 ├── scripts/
 │   └── generate_demo_data.py      # deterministic seed for 5 demo scenarios
@@ -258,7 +257,7 @@ python3 ../scripts/generate_demo_data.py --reset
 python3 ../scripts/generate_demo_data.py --reset --analyze
 ```
 
-This seeds five scenario claims (`CLM-DEMO-S1-LEGIT` through `CLM-DEMO-S5-MULTI`) with a complete entity graph for each. The script is deterministic and idempotent — `--reset` wipes existing demo data before reseeding.
+This seeds five scenario claims (`CLM-DEMO-S1-LEGIT` through `CLM-DEMO-S5-MULTI`) with a customer, vehicle, policy, claim, and the scenario-specific evidence and related records for each. The script is deterministic and idempotent — `--reset` wipes existing demo data before reseeding.
 
 ---
 
@@ -301,7 +300,7 @@ USE_DEMO_GEMINI=true
 ```
 
 - **Demo CV**: predictions are derived from the uploaded image's filename (e.g. `small-dent.jpg` → `dent` / `minor`). The consistency rules, risk scoring, and evidence generation all run unchanged.
-- **Demo Gemini**: a canned investigation summary is built from the actual deterministic risk signals. It passes through the same validator that a real Gemini response would.
+- **Demo Gemini**: a canned investigation summary is built from the actual deterministic risk signals. It uses the same output model and persistence path as the real Gemini client, but bypasses the real response parser and validation/repair flow.
 
 `GET /mode` exposes which flags are active so the frontend can surface the demo badge.
 
@@ -315,11 +314,7 @@ source backend/.venv/bin/activate
 python3 -m pytest tests/backend tests/ml -q
 ```
 
-Current result: **281 passed, 1 known failure**.
-
-### Known failure: `test_scenario_1_legitimate_claim_low`
-
-The test asserts that a clean, legitimate claim produces a `Low` risk band. The risk engine's low-data-confidence default bumps a claim with zero signals to `Medium` rather than leaving it at `Low`. This is a calibration issue (the weight or threshold for the default needs tuning), not a pipeline defect. It is intentionally left as-is rather than hidden.
+Current result: **287 passed**.
 
 ### Frontend
 
@@ -337,7 +332,7 @@ Both run clean. There is no JS unit test framework in the repository; the real l
 
 These are honest, known limitations as of the current codebase. None are hidden or worked around.
 
-- **Document intelligence is a stub.** The extraction layer reads a `POL-XXXX` token from the filename of policy documents and otherwise returns an empty field set. PyMuPDF is included but no real OCR or document-intelligence provider is wired in. Rules that depend on extracted fields (especially R9 — document field conflicts) have limited signal in the current implementation.
+- **Document intelligence is a stub.** The extraction layer reads a `POL-XXXX` token from the filename of policy documents and otherwise returns an empty field set. No PDF parser, OCR engine, or document-intelligence provider is currently wired in; real extraction is a future task. Rules that depend on extracted fields (especially R9 — document field conflicts) have limited signal in the current implementation.
 - **Single-process concurrency.** The pipeline runs in a thread inside the same uvicorn process. A partial unique index (`uq_analyses_one_running_per_claim`) provides an additional guard against concurrent running analyses, but the overall design is single-process. Running multiple uvicorn workers would need a cross-process lock (e.g. `SELECT … FOR UPDATE` on the claim row) or an external queue.
 - **No startup sweeper.** If the process dies mid-pipeline, the `Analysis` row stays in `running` state. A startup job that flips stale `running` rows to `failed` is a future task.
 - **No authentication.** The prototype assumes a single trusted user on a local machine. There is no session management, per-user audit trail, or claim-level locking.

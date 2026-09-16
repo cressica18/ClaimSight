@@ -26,8 +26,8 @@ import EmptyState from "../components/EmptyState";
 import ErrorState from "../components/ErrorState";
 import LoadingState from "../components/LoadingState";
 import Banner from "../components/Banner";
-import { RecommendationPill } from "../components/StatusPill";
-import { getInvestigation } from "../api/client";
+import { RecommendationPill, RiskBandPill } from "../components/StatusPill";
+import { getInvestigation, ApiError } from "../api/client";
 import type { InvestigationSummary } from "../types";
 import sharedStyles from "../components/shared.module.css";
 
@@ -68,16 +68,15 @@ export default function InvestigationSummaryPage() {
     try {
       const result = await getInvestigation(claimId);
       if (result === null) {
-        // Distinguish "404 no row" from "202 pending" via the
-        // response status; ApiError carries it.
-        // We use a single helper that returns null for both; the
-        // empty-state UI handles both.
+        // 404 — no investigation row exists for this claim.
         setMissing(true);
       } else {
         setData(result);
       }
     } catch (err) {
-      if (err instanceof Error && /202/.test(err.message)) {
+      // 202 — the pipeline is still running. Show the "pending"
+      // state with a Refresh button, not the "missing" state.
+      if (err instanceof ApiError && err.status === 202) {
         setPending(true);
       } else {
         const message =
@@ -208,6 +207,11 @@ export default function InvestigationSummaryPage() {
 
   if (!data) return null; // unreachable, but keeps TS happy
 
+  // When the claim is completed but the AI narrative is null,
+  // the Gemini layer failed gracefully. The deterministic fields
+  // (key_concerns, recommendation, risk score/band) are still
+  // available and rendered below — only the prose summary is absent.
+  const summaryFailed = data.summary === null;
   const disclaimer = data.disclaimer || DISCLAIMER_FALLBACK;
   const concerns = data.key_concerns.map(parseConcern);
 
@@ -232,7 +236,7 @@ export default function InvestigationSummaryPage() {
             flexWrap: "wrap",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", flexWrap: "wrap" }}>
             <span
               style={{
                 fontSize: "var(--text-xs)",
@@ -244,6 +248,49 @@ export default function InvestigationSummaryPage() {
               Recommendation
             </span>
             <RecommendationPill recommendation={data.recommendation} />
+            {/* Authoritative risk score + band, sourced from the
+                persisted Claim row (Phase 7 risk engine). Displaying
+                these here — not from the prose — guarantees the same
+                values the rest of the app shows, regardless of what
+                the summary text says about the score/band. */}
+            {data.risk_band && (
+              <>
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: 1,
+                    height: 16,
+                    backgroundColor: "var(--color-border)",
+                  }}
+                />
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "var(--space-2)",
+                    fontSize: "var(--text-xs)",
+                    color: "var(--color-text-muted)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  Risk
+                </span>
+                <RiskBandPill band={data.risk_band} />
+                <span
+                  aria-label={`Risk score ${data.risk_score?.toFixed(1) ?? "not scored"}`}
+                  style={{
+                    fontSize: "var(--text-sm)",
+                    color: "var(--color-text-primary)",
+                    fontFamily: "var(--font-serif)",
+                  }}
+                >
+                  {data.risk_score !== null
+                    ? data.risk_score.toFixed(1)
+                    : "—"}
+                </span>
+              </>
+            )}
           </div>
           <span
             aria-label="Investigation origin"
@@ -309,17 +356,33 @@ export default function InvestigationSummaryPage() {
           >
             Summary
           </h2>
-          <p
-            style={{
-              fontSize: "var(--text-base)",
-              lineHeight: 1.7,
-              color: "var(--color-text-primary)",
-              margin: 0,
-              whiteSpace: "pre-wrap",
-            }}
-          >
-            {data.summary}
-          </p>
+          {summaryFailed ? (
+            <p
+              style={{
+                fontSize: "var(--text-base)",
+                lineHeight: 1.7,
+                color: "var(--color-text-secondary)",
+                margin: 0,
+              }}
+            >
+              The AI investigation narrative is unavailable — the
+              Gemini service failed or is not configured. Risk
+              scoring, evidence, and the deterministic recommendation
+              are still available below.
+            </p>
+          ) : (
+            <p
+              style={{
+                fontSize: "var(--text-base)",
+                lineHeight: 1.7,
+                color: "var(--color-text-primary)",
+                margin: 0,
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {data.summary}
+            </p>
+          )}
         </section>
 
         {/* Key concerns */}
@@ -423,9 +486,14 @@ export default function InvestigationSummaryPage() {
           )}
         </section>
 
-        {/* Disclaimer banner — fixed text per blueprint 11.2 + Phase 8 rules */}
+        {/* Disclaimer banner — fixed text per blueprint 11.2 + Phase 8 rules.
+            The fixed human-in-the-loop phrase is rendered once; the
+            backend-supplied disclaimer is the same constant, so it is
+            not echoed again to avoid duplication. */}
         <Banner tone="warning">
-          <strong>AI-generated, human decision required.</strong> {disclaimer}
+          <strong>AI-generated, human decision required.</strong>
+          {" "}
+          {disclaimer !== DISCLAIMER_FALLBACK ? disclaimer : null}
         </Banner>
 
         {/* CTA: route to the Decision Panel */}

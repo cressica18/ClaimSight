@@ -133,11 +133,18 @@ export interface RiskSignalWithEvidence extends RiskSignal {
 // ─── Investigation (Phase 9) ───────────────────────────────────────────────
 
 export interface InvestigationSummary {
-  summary: string;
+  summary: string | null;
   key_concerns: string[];
   recommendation: Recommendation;
   disclaimer: string;
   model_version: string | null;
+  // Authoritative risk result, sourced from the persisted Claim row.
+  // The Investigation Summary page renders these alongside the
+  // recommendation so the user always sees the same score/band the
+  // rest of the app shows — even if the prose summary paraphrases or
+  // contradicts them.
+  risk_score: number | null;
+  risk_band: RiskBand | null;
 }
 
 export interface InvestigationRecord {

@@ -402,7 +402,7 @@ def test_get_document_404_when_not_in_claim(client, db_session, monkeypatch):
 # ─── Phase 9: investigation key_concerns + disclaimer ───────────────────────
 
 def _seed_investigation(
-    db_session, claim_id: int, summary: str, recommendation: str,
+    db_session, claim_id: int, summary: str | None, recommendation: str,
     *, model_version: str | None = None,
 ) -> None:
     inv = Investigation(
@@ -419,6 +419,11 @@ def test_investigation_202_when_no_summary(client, db_session):
     c, v, p = seed_base_data(db_session)
     create_resp = client.post("/claims", json={"claim_number": "CLM-INV-1", "policy_id": p.id, "vehicle_id": v.id, "incident_date": "2024-06-01"})
     claim_id = create_resp.json()["id"]
+    # Mark claim as analyzing to simulate an in-progress pipeline.
+    claim = db_session.get(Claim, claim_id)
+    claim.status = ClaimStatus.analyzing.value
+    db_session.add(claim)
+    db_session.commit()
     _seed_investigation(db_session, claim_id, summary="", recommendation="manual_review")
     response = client.get(f"/claims/{claim_id}/investigation")
     assert response.status_code == 202
@@ -500,6 +505,115 @@ def test_investigation_response_model_version_null_when_unset(client, db_session
     data = response.json()
     assert "model_version" in data
     assert data["model_version"] is None
+
+
+def test_investigation_response_includes_authoritative_risk_result(client, db_session):
+    """Regression: the Investigation Summary page must display the
+    risk score and risk band from the *persisted Claim row* — the same
+    authoritative source used by the rest of the app — even if the
+    summary prose mentions different values.
+
+    Previously the page only rendered `data.summary` (a prose string
+    from Gemini), so the page could display contradictory "risk score
+    of 0.0" + "risk band is categorized as Medium" statements
+    because the prose wasn't tied to the structured risk result.
+
+    The fix: surface `risk_score` and `risk_band` on the response, and
+    the frontend renders them as a structured indicator next to the
+    Recommendation pill — so the user always sees the same value the
+    Claim Analysis page shows.
+    """
+    c, v, p = seed_base_data(db_session)
+    create_resp = client.post("/claims", json={"claim_number": "CLM-INV-RISK", "policy_id": p.id, "vehicle_id": v.id, "incident_date": "2024-06-01"})
+    claim_id = create_resp.json()["id"]
+
+    # Authoritative values: band=Medium, score=42.5. The prose will
+    # mention a different (incorrect) score to mimic the bug report.
+    claim = db_session.get(Claim, claim_id)
+    claim.risk_score = 42.5
+    claim.risk_band = "Medium"
+    db_session.add(claim)
+    db_session.commit()
+
+    _seed_investigation(
+        db_session, claim_id,
+        summary=(
+            "The risk score of 0.0 places this claim in a Low band, "
+            "but the risk band is categorized as Medium and no risk "
+            "signals were identified."
+        ),
+        recommendation="manual_review",
+    )
+
+    response = client.get(f"/claims/{claim_id}/investigation")
+    assert response.status_code == 200
+    data = response.json()
+
+    # Authoritative fields must be present and come from the Claim row.
+    assert "risk_score" in data, "risk_score must be in the response"
+    assert "risk_band" in data, "risk_band must be in the response"
+    assert data["risk_score"] == 42.5, (
+        f"risk_score must come from the persisted Claim row, got {data['risk_score']!r}"
+    )
+    assert data["risk_band"] == "Medium", (
+        f"risk_band must come from the persisted Claim row, got {data['risk_band']!r}"
+    )
+    # The prose is preserved verbatim — the frontend uses the structured
+    # fields above to render the score/band consistently, NOT the prose.
+    assert "risk score of 0.0" in data["summary"]
+    assert "no risk signals were identified" in data["summary"]
+
+
+def test_investigation_response_risk_fields_null_when_claim_unscored(client, db_session):
+    """If the Claim row has no risk_score/risk_band (e.g. analysis
+    has not run), the response exposes them as `null` so the frontend
+    can render the 'not scored' state instead of fabricating values.
+    """
+    c, v, p = seed_base_data(db_session)
+    create_resp = client.post("/claims", json={"claim_number": "CLM-INV-UNSCORED", "policy_id": p.id, "vehicle_id": v.id, "incident_date": "2024-06-01"})
+    claim_id = create_resp.json()["id"]
+    _seed_investigation(
+        db_session, claim_id,
+        summary="Summary without scoring.",
+        recommendation="manual_review",
+    )
+
+    response = client.get(f"/claims/{claim_id}/investigation")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["risk_score"] is None
+    assert data["risk_band"] is None
+
+
+def test_investigation_returns_200_with_null_summary_when_claim_completed(
+    client, db_session
+):
+    """When the analysis pipeline completed but Gemini failed
+    (summary_text=None), the endpoint must return HTTP 200 —
+    not 202 — so the frontend shows the deterministic fields
+    (risk score, band, recommendation) instead of an infinite
+    loading state.
+    """
+    c, v, p = seed_base_data(db_session)
+    create_resp = client.post("/claims", json={"claim_number": "CLM-INV-GEM-FAIL", "policy_id": p.id, "vehicle_id": v.id, "incident_date": "2024-06-01"})
+    claim_id = create_resp.json()["id"]
+
+    # Simulate a completed pipeline where Gemini failed
+    # (summary_text=None in the DB).
+    claim = db_session.get(Claim, claim_id)
+    claim.status = ClaimStatus.completed.value
+    db_session.add(claim)
+    _seed_investigation(
+        db_session, claim_id,
+        summary=None,
+        recommendation="normal",
+    )
+
+    response = client.get(f"/claims/{claim_id}/investigation")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["summary"] is None
+    assert data["recommendation"] == "normal"
 
 
 # ─── Phase 9: decision notes persistence ────────────────────────────────────

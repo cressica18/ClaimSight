@@ -285,17 +285,40 @@ export async function getEvidence(
 /**
  * Fetch the investigation summary for a claim.
  *
- * Returns `null` if the backend returns 404 (no investigation row)
- * or 202 (investigation pending). Both states are valid display
- * states for the Investigation Summary screen and the caller can
- * handle them by passing the `null` to the empty-state UI.
+ * Returns `null` if the backend returns 404 (no investigation row yet).
+ * Throws `ApiError` with status 202 if the pipeline is still running
+ * (the frontend shows a "pending" state with a refresh button).
+ * Throws `ApiError` for any other non-2xx status, or `TimeoutError`
+ * if the request takes longer than DEFAULT_TIMEOUT_MS.
  */
 export async function getInvestigation(
   claimId: number
 ): Promise<InvestigationSummary | null> {
   const url = `${API_BASE}/claims/${claimId}/investigation`;
-  const response = await fetch(url);
-  if (response.status === 404 || response.status === 202) {
+  const { signal, cleanup, timedOut } = withTimeout(
+    undefined,
+    DEFAULT_TIMEOUT_MS
+  );
+
+  let response: Response;
+  try {
+    response = await fetch(url, { signal });
+  } catch (err) {
+    cleanup();
+    if (timedOut()) {
+      throw new TimeoutError(
+        `Request to /claims/${claimId}/investigation timed out after ${DEFAULT_TIMEOUT_MS}ms`
+      );
+    }
+    throw err;
+  }
+  cleanup();
+
+  if (response.status === 202) {
+    const text = await response.text().catch(() => response.statusText);
+    throw new ApiError(202, text);
+  }
+  if (response.status === 404) {
     return null;
   }
   if (!response.ok) {

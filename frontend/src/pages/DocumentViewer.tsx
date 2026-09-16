@@ -184,6 +184,7 @@ export default function DocumentViewer() {
   const [active, setActive] = useState<number | null>(null);
   const [activeDetail, setActiveDetail] = useState<DocumentDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Upload state
@@ -247,11 +248,13 @@ export default function DocumentViewer() {
   useEffect(() => {
     if (active === null) {
       setActiveDetail(null);
+      setDetailError(null);
       return;
     }
     const controller = new AbortController();
     let cancelled = false;
     setDetailLoading(true);
+    setDetailError(null);
     getDocument(claimId, active, { signal: controller.signal })
       .then((detail) => {
         if (cancelled) return;
@@ -259,13 +262,15 @@ export default function DocumentViewer() {
       })
       .catch((err) => {
         if (cancelled || controller.signal.aborted) return;
-        // Surface a non-abort failure rather than silently clearing the
-        // detail; the UI shows the existing detail until the user
-        // picks another tab. This avoids an unhandled-promise landmine
-        // where the active tab silently becomes empty.
+        // Surface the error to the user with a retry action instead of
+        // silently clearing the detail. The previous behavior logged to
+        // console and left the user with an empty state.
         // eslint-disable-next-line no-console
         console.error("Failed to load document detail", err);
         setActiveDetail(null);
+        const message =
+          err instanceof Error ? err.message : "Failed to load document details.";
+        setDetailError(message);
       })
       .finally(() => {
         if (!cancelled) setDetailLoading(false);
@@ -524,6 +529,20 @@ export default function DocumentViewer() {
                     >
                       Loading extracted fields…
                     </p>
+                  ) : detailError ? (
+                    <ErrorState
+                      message={detailError}
+                      title="Failed to load document details"
+                      onRetry={() => {
+                        setActiveDetail(null);
+                        setDetailError(null);
+                        // Trigger re-fetch by briefly setting active to null and back
+                        // Using a functional update to avoid stale closure
+                        setActive((current) => (current === active ? null : current));
+                        // The effect will re-run when active changes back
+                        setTimeout(() => setActive(active), 0);
+                      }}
+                    />
                   ) : (
                     <ExtractedFields
                       fields={activeDetail?.extracted_fields ?? null}

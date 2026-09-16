@@ -207,13 +207,21 @@ def get_investigation(
         )
 
     if not investigation.summary_text:
-        # 202 Accepted typically means processing hasn't finished,
-        # but returning a custom response schema might be cleaner.
-        # Following the blueprint strictly, return 202 if pending.
-        raise HTTPException(
-            status_code=status.HTTP_202_ACCEPTED,
-            detail="Investigation is pending or has not generated a summary yet."
-        )
+        # No summary text means Gemini generation failed or was
+        # skipped. If the claim is still analyzing, return 202 so
+        # the frontend knows to keep polling. If the claim is already
+        # completed, return 200 with a null summary — the pipeline
+        # finished successfully (risk score, evidence, recommendation)
+        # but the AI narrative is unavailable.
+        if claim.status == ClaimStatus.analyzing.value:
+            raise HTTPException(
+                status_code=status.HTTP_202_ACCEPTED,
+                detail="Investigation is pending or has not generated a summary yet."
+            )
+        # Claim is completed but summary_text is None (Gemini
+        # failure). Return 200 so the frontend shows the
+        # investigation's deterministic fields (risk score, band,
+        # recommendation) instead of an infinite loading state.
 
     # Derive key_concerns from the persisted RiskSignal rows so the
     # Investigation Summary screen has something concrete to render.
@@ -224,12 +232,22 @@ def get_investigation(
         for signal in signals
     ]
 
-    # Return structured investigation response
+    # Return structured investigation response. The `risk_score` and
+    # `risk_band` come straight from the persisted Claim row (Phase 7
+    # risk engine output) so the frontend can show the same values the
+    # rest of the app shows — not whatever the prose summary happened
+    # to mention.
     return InvestigationSummary(
         summary=investigation.summary_text,
         key_concerns=key_concerns,
         recommendation=Recommendation(investigation.recommendation),
         model_version=investigation.model_version,
+        risk_score=(
+            float(claim.risk_score) if claim.risk_score is not None else None
+        ),
+        risk_band=(
+            RiskBand(claim.risk_band) if claim.risk_band else None
+        ),
     )
 
 

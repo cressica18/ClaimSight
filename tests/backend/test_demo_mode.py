@@ -122,6 +122,41 @@ def test_demo_cv_predicts_bumper_for_bumper_filename(
     assert rows[0].severity == "moderate"
 
 
+def test_demo_cv_predicts_dent_for_front_end_damage_filename(
+    db_session, demo_cv_settings
+):
+    """front-end-damage.jpg must match the 'front-end-damage' token
+    (not 'front-damage') and produce dent/minor — not fall through
+    to the default scratch/minor result."""
+    claim, dmg = _make_claim_with_image(
+        db_session, image_filename="front-end-damage.jpg",
+    )
+    rows = cv_service.run_cv_on_image(
+        db_session, claim.id, dmg.region_ref, predictor=None,
+    )
+    assert len(rows) == 1
+    assert rows[0].damage_type == "dent"
+    assert rows[0].severity == "minor"
+    assert rows[0].confidence == 0.89
+
+
+def test_demo_cv_predicts_headlight_for_headlight_damage_filename(
+    db_session, demo_cv_settings
+):
+    """headlight-damage.jpg must match the 'headlight' token and
+    produce headlight_damage/minor."""
+    claim, dmg = _make_claim_with_image(
+        db_session, image_filename="headlight-damage.jpg",
+    )
+    rows = cv_service.run_cv_on_image(
+        db_session, claim.id, dmg.region_ref, predictor=None,
+    )
+    assert len(rows) == 1
+    assert rows[0].damage_type == "headlight_damage"
+    assert rows[0].severity == "minor"
+    assert rows[0].confidence == 0.90
+
+
 def test_demo_cv_falls_back_to_scratch_for_unknown_filename(
     db_session, demo_cv_settings
 ):

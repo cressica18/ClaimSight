@@ -376,6 +376,15 @@ def _run_steps(
         output = gemini_client.generate_investigation(
             claim_id, db, client=gemini_client_obj
         )
+    except gemini_client.GeminiError as exc:
+        # Configuration error (missing/invalid key). Must not
+        # break the deterministic pipeline — the claim still
+        # completes with risk score, evidence, and null summary.
+        logger.warning(
+            "Gemini investigation generation failed for claim %d: %s",
+            claim_id, exc,
+        )
+        output = None
     except Exception as exc:
         # Gemini failures must not break the deterministic pipeline.
         # Log and return None so the claim still completes with
