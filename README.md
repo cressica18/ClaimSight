@@ -15,7 +15,7 @@ ClaimSight aims to shorten that loop by doing the cross-checking automatically a
 The full pipeline:
 
 1. **Images** — accident photos are analysed by a fine-tuned ResNet-50 computer-vision model that predicts damage type (8 classes) and severity (minor / moderate / severe).
-2. **Documents** — uploaded claim forms, repair estimates, and policy documents pass through a limited deterministic extraction layer. Currently this reads a policy-number token from filenames; full OCR-based field extraction is a future task.
+2. **Documents** — uploaded claim forms, repair estimates, and policy documents pass through a deterministic extraction layer using PyMuPDF. The extractor reads text from digitally generated PDFs and structures fields such as policy numbers, claim numbers, VINs, plate numbers, coverage types, dates, amounts, repair items, and more. For scanned/image-only PDFs where no text can be extracted, the module marks the document as having low text content; OCR support is a clearly isolated future extension.
 3. **Consistency rules (R1–R9)** — nine deterministic rules cross-check all the evidence: do the photos match the claimed damage? Does the repair estimate cost match the baseline for this type of damage? Has the same vehicle had the same damage repaired before? And so on.
 4. **Risk score** — a deterministic, explainable formula turns the rule firings into a 0–100 score and a Low / Medium / High band. It defines five named feature slots with blueprint weights; `f5` (anomaly/Isolation Forest) is currently a no-op, so the four active features are proportionally rescaled.
 5. **Gemini narrative** — Gemini 2.5 Flash is prompted to write a 3–6 sentence investigation summary, citing only the rule firings and evidence already computed. The recommendation (`normal` / `manual_review` / `investigate`) is computed deterministically from the risk band; Gemini's value is overwritten.
@@ -27,7 +27,7 @@ The full pipeline:
 
 - **Claim graph and evidence workflows** — create/list customers, vehicles, policies, and claims; upload/list/get images and documents; retrieve previous claims, risk evidence, and investigations; and record officer decisions. Accident and repair-estimate records are created by demo/seed paths, but no dedicated API endpoints are exposed.
 - **Image upload + CV inference** — PyTorch ResNet-50 with dual heads (damage type + severity). A demo predictor (filename-based, no checkpoint required) is available for offline review.
-- **Document upload + extraction** — the current extraction layer is a deterministic filename-token stub: it reads a `POL-XXXX` token from policy-document filenames and otherwise returns an honest empty field set. No PDF parser, OCR engine, or document-intelligence provider is currently wired in; real extraction is a future task.
+- **Document upload + extraction** — uploaded PDFs are processed with PyMuPDF to extract structured fields: policy numbers, claim numbers, VINs, plate numbers, coverage types, dates, amounts, repair line items, and more. For scanned PDFs with no extractable text, the extractor returns an honest empty field set with a low confidence score; OCR is a future extension.
 - **Nine deterministic consistency rules (R1–R9)** — pure Python, unit-testable, no LLM calls.
 - **Frozen risk engine** — five named feature slots with blueprint weights, 0–100 score, and Low / Medium / High bands. `f5` (anomaly/Isolation Forest) is currently a no-op, so the four active features are proportionally rescaled. Fully explainable; each contributing factor is labelled with the underlying risk signals and claim data that drove it.
 - **Gemini investigation layer** — optional, mockable. Strict prompt that forbids inventing numbers or making the final call. Fails gracefully (summary set to null; pipeline still completes).
@@ -45,21 +45,21 @@ The full pipeline:
 │  Vite + TS       │ ◀────────────── │  /api/* routers                │
 │  9 screens       │                  │  /api/uploads  (static files)  │
 └──────────────────┘                  └────────────────────────────────┘
-                                                    │
-                                                    │ SQLAlchemy 2.0
-                                                    ▼
-                                           ┌──────────────────┐
-                                           │  PostgreSQL 15+  │
-                                           └──────────────────┘
-                                                    ▲
-                           ┌────────────────────────┴──────────────────────┐
-                           │         Pipeline  (POST /claims/{id}/analyze)  │
-                           │  CV (ResNet-50)                                │
-                           │    → Document Intelligence (filename-token stub) │
-                           │    → Consistency Engine (R1–R9)                │
-                           │    → Risk Engine (four active features + f5 stub)│
-                           │    → Gemini Investigation (LLM narration only) │
-                           └───────────────────────────────────────────────┘
+                                                     │
+                                                     │ SQLAlchemy 2.0
+                                                     ▼
+                                            ┌──────────────────┐
+                                            │  PostgreSQL 15+  │
+                                            └──────────────────┘
+                                                     ▲
+                            ┌────────────────────────┴──────────────────────┐
+                            │         Pipeline  (POST /claims/{id}/analyze)  │
+                            │  CV (ResNet-50)                                │
+                            │    → Document Intelligence (PyMuPDF extraction) │
+                            │    → Consistency Engine (R1–R9)                │
+                            │    → Risk Engine (four active features + f5 stub)│
+                            │    → Gemini Investigation (LLM narration only) │
+                            └───────────────────────────────────────────────┘
 ```
 
 The pipeline runs in a background thread in the same Python process. `POST /claims/{id}/analyze` returns `202 Accepted` immediately with an `analysis_id`, and the frontend polls `GET /claims/{id}/analysis/{analysis_id}` until the status is `completed` or `failed`.
@@ -76,7 +76,7 @@ The pipeline runs in a background thread in the same Python process. `POST /clai
 | Migrations     | Alembic (5 revisions)                                          |
 | Database       | PostgreSQL 15+                                                 |
 | CV model       | PyTorch, ResNet-50 (ImageNet pretrained, dual-head fine-tuned) |
-| DocIntel       | Deterministic filename-token stub (no PDF parser/OCR wired in)  |
+| DocIntel       | PyMuPDF (PDF text extraction, deterministic regex parsing)     |
 | Consistency    | Pure Python rule engine (no external dependencies)             |
 | Risk scoring   | Deterministic 5-feature weighted formula (no sklearn at runtime)|
 | LLM layer      | Gemini 2.5 Flash via `httpx`                                   |
@@ -332,7 +332,7 @@ Both run clean. There is no JS unit test framework in the repository; the real l
 
 These are honest, known limitations as of the current codebase. None are hidden or worked around.
 
-- **Document intelligence is a stub.** The extraction layer reads a `POL-XXXX` token from the filename of policy documents and otherwise returns an empty field set. No PDF parser, OCR engine, or document-intelligence provider is currently wired in; real extraction is a future task. Rules that depend on extracted fields (especially R9 — document field conflicts) have limited signal in the current implementation.
+- **Document intelligence works on digitally generated PDFs only.** The PyMuPDF-based extractor reads text from PDFs created by standard software. For scanned/image-only PDFs where no text can be extracted, the module marks the document as having low text content and returns an empty field set with a low confidence score. OCR support is a clearly isolated future extension. Rules that depend on extracted fields (especially R9 — document field conflicts) work reliably only when documents contain extractable text.
 - **Single-process concurrency.** The pipeline runs in a thread inside the same uvicorn process. A partial unique index (`uq_analyses_one_running_per_claim`) provides an additional guard against concurrent running analyses, but the overall design is single-process. Running multiple uvicorn workers would need a cross-process lock (e.g. `SELECT … FOR UPDATE` on the claim row) or an external queue.
 - **No startup sweeper.** If the process dies mid-pipeline, the `Analysis` row stays in `running` state. A startup job that flips stale `running` rows to `failed` is a future task.
 - **No authentication.** The prototype assumes a single trusted user on a local machine. There is no session management, per-user audit trail, or claim-level locking.

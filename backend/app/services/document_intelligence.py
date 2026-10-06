@@ -1,46 +1,29 @@
-"""Document Intelligence — Phase 11 deterministic stub.
+"""Document Intelligence — real PDF text extraction using PyMuPDF.
 
-Blueprint Section 4 calls for an OCR / DocIntel provider that turns
-uploaded claim documents into structured `extracted_fields`. Phase 11
-ships a minimal, deterministic stub so the rest of the pipeline
-(consistency R9, evidence generation, frontend Document Viewer) can
-exercise the full data path. The real provider is a Phase 13 task.
+This module provides the public `extract_document` function used by the
+analysis pipeline. It delegates to `DocumentExtractor` which performs
+deterministic text extraction from PDF files and structures the results
+into fields consumable by the consistency rules (especially R9).
 
-What this stub does:
-- For a Document with `extraction_status == "pending"`, look at the
-  file on disk + the `doc_type`, and write a small JSON payload to
-  `extracted_fields`.
-- Always sets `raw_confidence` to 0.5 (calibrated, not overclaimed).
-- Flips `extraction_status` to `"completed"` on success, `"failed"`
-  on error (file missing, decode failure).
+Supported document types:
+- policy: policy_number, coverage_type, policy_start_date, policy_end_date, insured_name, vin, plate_number
+- claim_form: claim_number, policy_number, accident_date, claimed_amount, accident_description, claimed_damage_types, vin, plate_number
+- estimate/invoice: total_estimate, repair_date, currency, repair_items, shop_name, policy_number, claim_number, vin, plate_number
+- previous_claim: previous_claim_number, incident_date, damage_summary, claimed_amount, policy_number, vin, plate_number
 
-What it deliberately does NOT do:
-- Call any external API or OCR service.
-- Invent values it cannot derive from the file name. The "policy"
-  branch is the only one that extracts anything, and only when the
-  filename contains a token that looks like a policy number. We never
-  claim to have read the file body.
+For scanned/image-only PDFs where no text can be extracted, the module
+marks the document with `is_scanned=True` in the extracted fields and
+assigns a low confidence score. OCR support is a clearly isolated future
+extension.
 
 The function is safe to call repeatedly on the same Document; the
 caller is expected to skip rows whose `extraction_status != "pending"`.
-
-Phase 14 (final bug-fix pass) — internal marker payload
-{"_phase11_stub": True, "doc_type": ...} was previously written when
-no filename-token could be parsed. That marker is no longer emitted:
-the UI was surfacing the raw key/value pair to the end user, which
-read as an internal implementation detail. The stub now returns
-honest empty field sets derived from the file's metadata (filename +
-doc_type) so the UI can show a meaningful "no structured fields
-extracted" state instead of a `_phase11_stub` flag. The presence of
-the stub itself is documented at the API/UI level (e.g. via the
-"AI-generated" disclaimer on the investigation page).
 """
 
 from __future__ import annotations
 
 import logging
 import os
-import re
 from pathlib import Path
 from typing import Any
 
@@ -49,17 +32,9 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.document import Document
 from app.models.enums import ExtractionStatus
+from app.services.document_extractor import DocumentExtractor, ExtractionResult
 
 logger = logging.getLogger(__name__)
-
-
-# Filename token that looks like a policy number: e.g. "POL-12345", "pol_12345".
-_POLICY_NUMBER_RE = re.compile(r"(?i)\bpol[_-]?([a-z0-9]{4,})\b")
-
-# Default confidence for the stub. Documented as 0.5 in the writeup
-# so the UI can render it as "low confidence" — we never claim more
-# than we can back up.
-STUB_CONFIDENCE = 0.5
 
 
 def extract_document(db: Session, claim_id: int, document_id: int) -> bool:
@@ -87,14 +62,18 @@ def extract_document(db: Session, claim_id: int, document_id: int) -> bool:
         return True
 
     try:
-        fields = _run_stub_extraction(document)
+        result = _run_extraction(document)
     except Exception as exc:  # noqa: BLE001
         logger.exception("extract_document failed for doc %s: %s", document_id, exc)
         _mark_failed(document, db, reason=str(exc)[:500])
         return False
 
-    document.extracted_fields = fields
-    document.raw_confidence = STUB_CONFIDENCE
+    # Store only user-facing fields in extracted_fields.
+    # Internal metadata (warnings, scanned status) is logged but not persisted
+    # to avoid leaking implementation details to the UI. The UI can infer
+    # scan status from low confidence + empty fields.
+    document.extracted_fields = dict(result.fields)
+    document.raw_confidence = result.raw_confidence
     document.extraction_status = ExtractionStatus.completed.value
     db.add(document)
     db.commit()
@@ -134,47 +113,29 @@ def _resolve_path(relative_path: str) -> Path:
     return base_dir / relative_path
 
 
-def _filename_of(document: Document) -> str:
-    return Path(document.file_path).name
-
-
-def _run_stub_extraction(document: Document) -> dict[str, Any]:
-    """Derive a small JSON payload from the file's name and doc_type.
-
-    We never read the file body in Phase 11. The only field we attempt
-    to extract is `policy_number` from a "policy" document whose
-    filename contains a token that looks like a policy number. For
-    every other case we return an *empty* payload — there are no
-    structured fields to surface, so we say so honestly.
-
-    Earlier revisions wrote a `{"_phase11_stub": True, "doc_type": ...}`
-    marker payload, but that surfaced internal implementation details
-    to the end user. The UI now renders an empty fields object as
-    "no structured fields extracted" instead.
-    """
-    filename = _filename_of(document)
-    doc_type = document.doc_type
-
-    # 1. If the file is missing on disk, we treat that as a real
-    #    failure (not a "no fields" result) so the pipeline flips
-    #    extraction_status to "failed". This surfaces uploads that
-    #    were recorded but never made it to disk.
+def _run_extraction(document: Document) -> ExtractionResult:
+    """Extract structured fields from the document file using PyMuPDF."""
     full_path = _resolve_path(document.file_path)
     if not full_path.exists():
         raise FileNotFoundError(f"document file missing: {document.file_path}")
 
-    if doc_type == "policy":
-        match = _POLICY_NUMBER_RE.search(filename)
-        if match:
-            return {"policy_number": match.group(0).upper()}
-        return {}
+    # Only process PDF files; other types return empty with warning
+    if full_path.suffix.lower() != ".pdf":
+        logger.warning("Unsupported file type for extraction: %s", full_path.suffix)
+        return ExtractionResult(
+            fields={},
+            raw_confidence=0.0,
+            warnings=(f"Unsupported file type: {full_path.suffix}. Only PDF is supported.",),
+            is_scanned=False,
+        )
 
-    # claim_form / estimate / invoice / previous_claim — we never
-    # invent values; the file body is not read in the Phase 11 stub.
-    return {}
+    extractor = DocumentExtractor()
+    return extractor.extract(full_path, document.doc_type)
 
 
-# Re-export so test code can import the regex if it needs to assert.
+# Re-export for backward compatibility with tests
+from app.services.document_extractor import STUB_CONFIDENCE  # noqa: E402
+
 __all__ = [
     "extract_document",
     "STUB_CONFIDENCE",

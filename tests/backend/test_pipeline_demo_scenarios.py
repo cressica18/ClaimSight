@@ -98,6 +98,17 @@ class _FakeGeminiClient:
 
 # ─── Scenario seed helpers ──────────────────────────────────────────────────
 
+# Minimal valid PDF for testing (single blank page)
+_MINIMAL_PDF_BYTES = (
+    b"%PDF-1.4\n"
+    b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
+    b"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n"
+    b"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>\nendobj\n"
+    b"xref\n0 4\n0000000000 65535 f \n"
+    b"0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \n"
+    b"trailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n183\n%%EOF\n"
+)
+
 
 def _patch_storage_path(
     monkeypatch, tmp_path: Path, claim_id: int, *, filenames: list[str] | None = None,
@@ -111,7 +122,11 @@ def _patch_storage_path(
     base = tmp_path
     (base / str(claim_id)).mkdir(parents=True, exist_ok=True)
     for name in (filenames or ["doc.pdf", "img.jpg"]):
-        (base / str(claim_id) / name).write_bytes(b"%PDF-stub")
+        if name.lower().endswith(".pdf"):
+            (base / str(claim_id) / name).write_bytes(_MINIMAL_PDF_BYTES)
+        else:
+            # Minimal JPEG header
+            (base / str(claim_id) / name).write_bytes(b"\xff\xd8\xff\xe0" + b"\x00" * 32 + b"\xff\xd9")
     monkeypatch.setattr(
         "app.services.document_intelligence.settings.upload_dir",
         str(base),

@@ -106,6 +106,106 @@ _MINIMAL_PDF_BYTES = (
 )
 
 
+def _policy_pdf_bytes(policy_number: str, coverage_type: str = "comprehensive") -> bytes:
+    """Generate a PDF with policy information extractable by the document extractor."""
+    content = (
+        f"INSURANCE POLICY DOCUMENT\n\n"
+        f"Policy Number: {policy_number}\n"
+        f"Coverage Type: {coverage_type}\n"
+        f"Policy Start Date: 01/01/2024\n"
+        f"Policy End Date: 12/31/2026\n"
+        f"Insured: Alice Legitimate\n"
+        f"Vehicle Registration: DEMO-S1-LEG\n"
+        f"VIN: VIN-DEMO-S1-LEGIT\n"
+    )
+    return _pdf_with_text(content)
+
+
+def _claim_form_pdf_bytes(claim_number: str, policy_number: str, plate: str) -> bytes:
+    """Generate a PDF with claim form information."""
+    content = (
+        f"CLAIM FORM\n\n"
+        f"Claim Number: {claim_number}\n"
+        f"Policy Number: {policy_number}\n"
+        f"Vehicle Registration: {plate}\n"
+        f"Accident Date: 02/15/2026\n"
+        f"Claimed Amount: $600.00\n"
+        f"Description: Minor scratch on the rear door from parking incident.\n"
+        f"Claimed Damage: scratch\n"
+    )
+    return _pdf_with_text(content)
+
+
+def _estimate_pdf_bytes(shop_name: str, total_cost: float, items: list[dict]) -> bytes:
+    """Generate a PDF with repair estimate information."""
+    items_text = "\n".join(
+        f"  {it['part_name']} - {it['operation']} - ${it['cost']:.2f}"
+        for it in items
+    )
+    content = (
+        f"REPAIR ESTIMATE\n\n"
+        f"Shop: {shop_name}\n"
+        f"Date: 02/15/2026\n"
+        f"Total Estimate: ${total_cost:.2f}\n"
+        f"Currency: USD\n\n"
+        f"Items:\n{items_text}\n"
+    )
+    return _pdf_with_text(content)
+
+
+def _inflated_estimate_pdf_bytes(shop_name: str, total_cost: float, items: list[dict]) -> bytes:
+    """Generate a PDF with inflated repair estimate."""
+    items_text = "\n".join(
+        f"  {it['part_name']} - {it['operation']} - ${it['cost']:.2f}"
+        for it in items
+    )
+    content = (
+        f"REPAIR ESTIMATE\n\n"
+        f"Shop: {shop_name}\n"
+        f"Date: 02/15/2026\n"
+        f"Total Estimate: ${total_cost:.2f}\n"
+        f"Currency: USD\n\n"
+        f"Items:\n{items_text}\n"
+    )
+    return _pdf_with_text(content)
+
+
+def _pdf_with_text(text: str) -> bytes:
+    """Create a valid PDF with the given text content.
+    
+    This creates a simple PDF with the text in a content stream that
+    PyMuPDF can extract.
+    """
+    text_escaped = text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+    # Split text into lines for PDF text output
+    lines = text_escaped.split("\n")
+    text_commands = []
+    y = 750
+    for line in lines:
+        text_commands.append(f"BT /F1 12 Tf 72 {y} Td ({line}) Tj ET")
+        y -= 14
+    text_stream = "\n".join(text_commands)
+    stream_length = len(text_stream)
+    
+    # Build the PDF as bytes
+    pdf_parts = [
+        b"%PDF-1.4\n",
+        b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+        b"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+        b"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] ",
+        b"/Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n",
+        f"4 0 obj\n<< /Length {stream_length} >>\nstream\n".encode(),
+        text_stream.encode(),
+        b"\nendstream\nendobj\n",
+        b"5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
+        b"xref\n0 6\n0000000000 65535 f \n",
+        b"0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \n",
+        b"0000000218 00000 n \n0000000350 00000 n \n",
+        b"trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n420\n%%EOF\n",
+    ]
+    return b"".join(pdf_parts)
+
+
 # ─── DB plumbing ───────────────────────────────────────────────────────────
 
 
@@ -412,8 +512,8 @@ def _seed_placeholder_files(
     db: Session, claim: Claim, basenames: list[str]
 ) -> None:
     """Write small placeholder files to disk so the CV service and
-    document-intelligence stub can find them. The CV service needs
-    a real file to succeed; the document stub flips to `failed` if
+    document-intelligence can find them. The CV service needs
+    a real file to succeed; the document extractor flips to `failed` if
     the file is missing.
     """
     base = Path(settings.upload_dir)
@@ -424,20 +524,12 @@ def _seed_placeholder_files(
     for name in basenames:
         path = claim_dir / name
         if not path.exists():
-            # Minimal JPEG / PDF headers so file-type detection does
-            # not crash anything. The actual content does not matter
-            # because CV is mocked during demo runs.
             if name.lower().endswith((".jpg", ".jpeg")):
                 path.write_bytes(
                     b"\xff\xd8\xff\xe0" + b"\x00" * 32 + b"\xff\xd9"
                 )
             else:
-                # A minimal but valid PDF that Chrome's built-in
-                # viewer will open. The old 21-byte stub was missing
-                # the xref table + trailer so the browser refused
-                # it with "Failed to load PDF document". This is a
-                # blank single-page document — we are not inventing
-                # any content for a real claim.
+                # Use minimal blank PDF for unknown document types
                 path.write_bytes(_MINIMAL_PDF_BYTES)
 
 
@@ -459,6 +551,8 @@ def seed_s1_legitimate(db: Session) -> Claim:
         claimed_amount=600.0,
     )
     _add_image(db, claim, image_basename="rear-scratch.jpg")
+    _add_document(db, claim, doc_type=DocType.policy.value,
+                  basename="policy.pdf")
     _add_document(db, claim, doc_type=DocType.claim_form.value,
                   basename="claim-form.pdf")
     _add_document(db, claim, doc_type=DocType.estimate.value,
@@ -473,9 +567,27 @@ def seed_s1_legitimate(db: Session) -> Claim:
              "cost": 200.0, "labor_hours": 2.0},
         ],
     )
-    _seed_placeholder_files(db, claim, [
-        "rear-scratch.jpg", "claim-form.pdf", "repair-estimate.pdf",
-    ])
+    # Write PDF files with extractable content
+    base = Path(settings.upload_dir)
+    if not base.is_absolute():
+        base = Path(os.getcwd()) / base
+    claim_dir = base / str(claim.id)
+    claim_dir.mkdir(parents=True, exist_ok=True)
+    (claim_dir / "rear-scratch.jpg").write_bytes(
+        b"\xff\xd8\xff\xe0" + b"\x00" * 32 + b"\xff\xd9"
+    )
+    (claim_dir / "policy.pdf").write_bytes(
+        _policy_pdf_bytes(pol.policy_number, pol.coverage_type)
+    )
+    (claim_dir / "claim-form.pdf").write_bytes(
+        _claim_form_pdf_bytes(claim.claim_number, pol.policy_number, veh.plate_number)
+    )
+    (claim_dir / "repair-estimate.pdf").write_bytes(
+        _estimate_pdf_bytes("Accurate Auto Body", 600.0, [
+            {"part_name": "rear quarter panel", "operation": "repair", "cost": 400.0, "labor_hours": 2.0},
+            {"part_name": "paint", "operation": "paint", "cost": 200.0, "labor_hours": 2.0},
+        ])
+    )
     return claim
 
 
@@ -496,6 +608,8 @@ def seed_s2_inflated(db: Session) -> Claim:
         claimed_amount=50000.0,
     )
     _add_image(db, claim, image_basename="small-dent.jpg")
+    _add_document(db, claim, doc_type=DocType.policy.value,
+                  basename="policy.pdf")
     _add_document(db, claim, doc_type=DocType.claim_form.value,
                   basename="claim-form.pdf")
     _add_document(db, claim, doc_type=DocType.estimate.value,
@@ -507,9 +621,26 @@ def seed_s2_inflated(db: Session) -> Claim:
              "cost": 50000.0, "labor_hours": 10.0},
         ],
     )
-    _seed_placeholder_files(db, claim, [
-        "small-dent.jpg", "claim-form.pdf", "inflated-estimate.pdf",
-    ])
+    # Write PDF files with extractable content
+    base = Path(settings.upload_dir)
+    if not base.is_absolute():
+        base = Path(os.getcwd()) / base
+    claim_dir = base / str(claim.id)
+    claim_dir.mkdir(parents=True, exist_ok=True)
+    (claim_dir / "small-dent.jpg").write_bytes(
+        b"\xff\xd8\xff\xe0" + b"\x00" * 32 + b"\xff\xd9"
+    )
+    (claim_dir / "policy.pdf").write_bytes(
+        _policy_pdf_bytes(pol.policy_number, pol.coverage_type)
+    )
+    (claim_dir / "claim-form.pdf").write_bytes(
+        _claim_form_pdf_bytes(claim.claim_number, pol.policy_number, veh.plate_number)
+    )
+    (claim_dir / "inflated-estimate.pdf").write_bytes(
+        _inflated_estimate_pdf_bytes("Premium Auto Spa", 50000.0, [
+            {"part_name": "front bumper", "operation": "replace", "cost": 50000.0, "labor_hours": 10.0},
+        ])
+    )
     return claim
 
 
@@ -532,6 +663,8 @@ def seed_s3_mismatch(db: Session) -> Claim:
         claimed_amount=15000.0,
     )
     _add_image(db, claim, image_basename="bumper-dent.jpg")
+    _add_document(db, claim, doc_type=DocType.policy.value,
+                  basename="policy.pdf")
     _add_document(db, claim, doc_type=DocType.claim_form.value,
                   basename="claim-form.pdf")
     _add_claim_form_damage(
@@ -543,9 +676,21 @@ def seed_s3_mismatch(db: Session) -> Claim:
                      "in the collision."),
         location="Highway 101", incident_type="collision",
     )
-    _seed_placeholder_files(db, claim, [
-        "bumper-dent.jpg", "claim-form.pdf",
-    ])
+    # Write PDF files with extractable content
+    base = Path(settings.upload_dir)
+    if not base.is_absolute():
+        base = Path(os.getcwd()) / base
+    claim_dir = base / str(claim.id)
+    claim_dir.mkdir(parents=True, exist_ok=True)
+    (claim_dir / "bumper-dent.jpg").write_bytes(
+        b"\xff\xd8\xff\xe0" + b"\x00" * 32 + b"\xff\xd9"
+    )
+    (claim_dir / "policy.pdf").write_bytes(
+        _policy_pdf_bytes(pol.policy_number, pol.coverage_type)
+    )
+    (claim_dir / "claim-form.pdf").write_bytes(
+        _claim_form_pdf_bytes(claim.claim_number, pol.policy_number, veh.plate_number)
+    )
     return claim
 
 
@@ -566,6 +711,8 @@ def seed_s4_prev_overlap(db: Session) -> Claim:
         claimed_amount=2200.0,
     )
     _add_image(db, claim, image_basename="bumper.jpg")
+    _add_document(db, claim, doc_type=DocType.policy.value,
+                  basename="policy.pdf")
     _add_document(db, claim, doc_type=DocType.claim_form.value,
                   basename="claim-form.pdf")
     # Previous claim for the same vehicle 3 months earlier, with
@@ -586,9 +733,21 @@ def seed_s4_prev_overlap(db: Session) -> Claim:
     _add_claim_form_damage(
         db, claim, damage_type="bumper_damage", severity="moderate",
     )
-    _seed_placeholder_files(db, claim, [
-        "bumper.jpg", "claim-form.pdf",
-    ])
+    # Write PDF files with extractable content
+    base = Path(settings.upload_dir)
+    if not base.is_absolute():
+        base = Path(os.getcwd()) / base
+    claim_dir = base / str(claim.id)
+    claim_dir.mkdir(parents=True, exist_ok=True)
+    (claim_dir / "bumper.jpg").write_bytes(
+        b"\xff\xd8\xff\xe0" + b"\x00" * 32 + b"\xff\xd9"
+    )
+    (claim_dir / "policy.pdf").write_bytes(
+        _policy_pdf_bytes(pol.policy_number, pol.coverage_type)
+    )
+    (claim_dir / "claim-form.pdf").write_bytes(
+        _claim_form_pdf_bytes(claim.claim_number, pol.policy_number, veh.plate_number)
+    )
     return claim
 
 
@@ -610,6 +769,8 @@ def seed_s5_multi_signal(db: Session) -> Claim:
         claimed_amount=80000.0,
     )
     _add_image(db, claim, image_basename="front-damage.jpg")
+    _add_document(db, claim, doc_type=DocType.policy.value,
+                  basename="policy.pdf")
     _add_document(db, claim, doc_type=DocType.claim_form.value,
                   basename="claim-form.pdf")
     _add_document(db, claim, doc_type=DocType.estimate.value,
@@ -630,9 +791,26 @@ def seed_s5_multi_signal(db: Session) -> Claim:
              "cost": 80000.0, "labor_hours": 15.0},
         ],
     )
-    _seed_placeholder_files(db, claim, [
-        "front-damage.jpg", "claim-form.pdf", "inflated-estimate.pdf",
-    ])
+    # Write PDF files with extractable content
+    base = Path(settings.upload_dir)
+    if not base.is_absolute():
+        base = Path(os.getcwd()) / base
+    claim_dir = base / str(claim.id)
+    claim_dir.mkdir(parents=True, exist_ok=True)
+    (claim_dir / "front-damage.jpg").write_bytes(
+        b"\xff\xd8\xff\xe0" + b"\x00" * 32 + b"\xff\xd9"
+    )
+    (claim_dir / "policy.pdf").write_bytes(
+        _policy_pdf_bytes(pol.policy_number, pol.coverage_type)
+    )
+    (claim_dir / "claim-form.pdf").write_bytes(
+        _claim_form_pdf_bytes(claim.claim_number, pol.policy_number, veh.plate_number)
+    )
+    (claim_dir / "inflated-estimate.pdf").write_bytes(
+        _inflated_estimate_pdf_bytes("Luxury Auto Restoration", 80000.0, [
+            {"part_name": "front bumper", "operation": "replace", "cost": 80000.0, "labor_hours": 15.0},
+        ])
+    )
     return claim
 
 
