@@ -222,7 +222,7 @@ def test_r2_triggers_when_text_says_totaled_but_cv_says_minor():
 def test_r2_triggers_when_text_says_minor_but_cv_says_severe():
     ctx = _base_ctx(
         accident_description="Just a small scratch on the bumper.",
-        image_damages=(_img(damage_type="panel_damage", severity="severe"),),
+        image_damages=(_img(damage_type="shattered_glass", severity="severe"),),
     )
     sig = r2_severity_mismatch(ctx)
     assert sig is not None
@@ -242,7 +242,7 @@ def test_r2_does_not_trigger_when_only_one_side_has_severity():
     # Description is silent, but CV is severe.
     ctx = _base_ctx(
         accident_description="Something happened to my car.",
-        image_damages=(_img(damage_type="panel_damage", severity="severe"),),
+        image_damages=(_img(damage_type="shattered_glass", severity="severe"),),
     )
     assert r2_severity_mismatch(ctx) is None
 
@@ -254,7 +254,7 @@ def test_r2_uses_worst_cv_severity_across_multiple_detections():
         accident_description="A small scratch.",
         image_damages=(
             _img(id=1, damage_type="scratch", severity="minor"),
-            _img(id=2, damage_type="panel_damage", severity="severe"),
+            _img(id=2, damage_type="shattered_glass", severity="severe"),
         ),
     )
     assert r2_severity_mismatch(ctx) is not None
@@ -371,14 +371,14 @@ def test_r5_triggers_when_previous_claim_within_6_months_and_overlap():
         id=1,
         claim_number="CLM-000",
         incident_date=dt.date(2025, 4, 1),  # ~75 days earlier
-        damage_summary="rear bumper panel damage from collision",
+        damage_summary="rear bumper dent panel damage from collision",
         claimed_amount=800.0,
         overlap_score=None,
     )
     ctx = _base_ctx(
         incident_date=dt.date(2025, 6, 15),
         previous_claims=(prev,),
-        image_damages=(_img(damage_type="bumper_damage"),),
+        image_damages=(_img(damage_type="dent"),),
     )
     sig = r5_duplicate_previous_damage(ctx)
     assert sig is not None
@@ -400,7 +400,7 @@ def test_r5_does_not_trigger_when_previous_claim_outside_6_months():
     ctx = _base_ctx(
         incident_date=dt.date(2025, 6, 15),
         previous_claims=(prev,),
-        image_damages=(_img(damage_type="bumper_damage"),),
+        image_damages=(_img(damage_type="dent"),),
     )
     assert r5_duplicate_previous_damage(ctx) is None
 
@@ -417,7 +417,7 @@ def test_r5_does_not_trigger_when_regions_dont_overlap():
     ctx = _base_ctx(
         incident_date=dt.date(2025, 6, 15),
         previous_claims=(prev,),
-        image_damages=(_img(damage_type="bumper_damage"),),
+        image_damages=(_img(damage_type="dent"),),
     )
     assert r5_duplicate_previous_damage(ctx) is None
 
@@ -450,17 +450,17 @@ def test_r6_does_not_trigger_when_comprehensive_covers_all():
         image_damages=(
             _img(damage_type="scratch"),
             _img(id=2, damage_type="shattered_glass"),
-            _img(id=3, damage_type="bumper_damage"),
+            _img(id=3, damage_type="dent"),
         ),
     )
     assert r6_policy_coverage_mismatch(ctx) is None
 
 
 def test_r6_does_not_trigger_when_collision_covers_collision_damage():
-    # Collision covers scratch/dent/bumper/panel.
+    # Collision covers scratch/dent.
     ctx = _base_ctx(
         coverage_type="collision",
-        image_damages=(_img(damage_type="bumper_damage"),),
+        image_damages=(_img(damage_type="dent"),),
     )
     assert r6_policy_coverage_mismatch(ctx) is None
 

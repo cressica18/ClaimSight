@@ -47,11 +47,9 @@ _DEMO_CV_TABLE: dict[str, tuple[str, str, float]] = {
     "rear-scratch": ("scratch",        "minor",     0.93),
     "small-dent":   ("dent",           "minor",     0.91),
     "dent":         ("dent",           "minor",     0.90),
-    "bumper-dent":  ("bumper_damage",  "moderate",  0.88),
-    "bumper":       ("bumper_damage",  "moderate",  0.88),
+    "bumper":       ("dent",           "moderate",  0.88),
     "front-damage": ("dent",           "minor",     0.89),
     "front-end-damage": ("dent",      "minor",     0.89),
-    "panel":        ("panel_damage",   "moderate",  0.87),
     "glass":        ("shattered_glass","severe",    0.94),
     "headlight":    ("headlight_damage","minor",    0.90),
 }

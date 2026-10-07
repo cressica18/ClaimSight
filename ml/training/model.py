@@ -3,7 +3,7 @@ ResNet-50 dual-head model for vehicle damage classification.
 
 Architecture (blueprint Section 2.2):
 - Backbone: ResNet-50 pretrained on ImageNet
-- Head A: 8-class multi-label (sigmoid) — damage type presence
+- Head A: 5-class multi-label (sigmoid) — damage type presence
 - Head B: 3-class single-label (softmax) — severity
 
 Training strategy:

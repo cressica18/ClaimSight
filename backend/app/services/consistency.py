@@ -544,10 +544,7 @@ _DAMAGE_TYPE_PLAUSIBLE_PARTS: dict[str, set[str]] = {
 _PLAUSIBLE_PARTS: dict[str, set[str]] = {
     "scratch": {"panel", "door", "hood", "fender", "bumper", "quarter", "trunk", "roof", "mirror", "paint"},
     "dent": {"panel", "door", "hood", "fender", "bumper", "quarter", "trunk", "roof", "side"},
-    "crack": {"windshield", "window", "glass", "mirror", "lens", "headlight", "taillight"},
     "shattered_glass": {"windshield", "window", "glass", "mirror", "lens"},
-    "bumper_damage": {"bumper", "fender", "reinforcement", "bracket"},
-    "panel_damage": {"panel", "door", "hood", "fender", "quarter", "trunk", "roof", "side"},
     "headlight_damage": {"headlight", "lens", "housing", "bulb", "taillight"},
     "no_damage": set(),  # nothing should require repair
 }
@@ -779,11 +776,10 @@ def r5_duplicate_previous_damage(ctx: ClaimContext) -> RiskSignal | None:
 # set for the current policy is a mismatch.
 _COVERAGE_DAMAGE_TYPES: dict[str, set[str]] = {
     "comprehensive": {
-        "scratch", "dent", "crack", "shattered_glass", "bumper_damage",
-        "panel_damage", "headlight_damage",
+        "scratch", "dent", "shattered_glass", "headlight_damage",
     },
     "collision": {
-        "scratch", "dent", "bumper_damage", "panel_damage",
+        "scratch", "dent",
     },
     "third_party": set(),  # third_party does not cover own-vehicle damage
     "fire_theft": set(),   # fire & theft only cover fire / theft losses

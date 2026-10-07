@@ -23,17 +23,14 @@ RESULTS_DIR  = ML_DIR / "results"
 DAMAGE_TYPES = [
     "scratch",
     "dent",
-    "crack",
     "shattered_glass",
-    "bumper_damage",
-    "panel_damage",
     "headlight_damage",
     "no_damage",
 ]
 
 SEVERITY_CLASSES = ["minor", "moderate", "severe"]
 
-NUM_DAMAGE_CLASSES = len(DAMAGE_TYPES)   # 8
+NUM_DAMAGE_CLASSES = len(DAMAGE_TYPES)   # 5
 NUM_SEVERITY_CLASSES = len(SEVERITY_CLASSES)   # 3
 
 # ─── Preprocessing ────────────────────────────────────────────────────────────
@@ -74,6 +71,8 @@ LOW_CONF_SEVERITY = 0.5     # severity softmax confidence below this → low_con
 RANDOM_SEED   = 42
 CHECKPOINT_NAME = "claimsight_cv_v1.pt"
 CHECKPOINT_PATH = WEIGHTS_DIR / CHECKPOINT_NAME
+CHECKPOINT_NAME_5CLASS = "claimsight_cv_v2_5class.pt"
+CHECKPOINT_PATH_5CLASS = WEIGHTS_DIR / CHECKPOINT_NAME_5CLASS
 
 # ─── Dataset split ────────────────────────────────────────────────────────────
 

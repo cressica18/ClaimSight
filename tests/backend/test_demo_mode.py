@@ -118,7 +118,8 @@ def test_demo_cv_predicts_bumper_for_bumper_filename(
         db_session, claim.id, dmg.region_ref, predictor=None,
     )
     assert len(rows) == 1
-    assert rows[0].damage_type == "bumper_damage"
+    # "bumper" maps to "dent" in the demo CV table (bumper damage is a type of dent)
+    assert rows[0].damage_type == "dent"
     assert rows[0].severity == "moderate"
 
 

@@ -53,8 +53,8 @@ _COVERAGE_KEYWORDS = {
 
 # Damage type keywords for claim forms
 _DAMAGE_KEYWORDS = [
-    "scratch", "dent", "crack", "shattered_glass", "bumper_damage",
-    "panel_damage", "headlight_damage", "windshield", "mirror",
+    "scratch", "dent", "shattered_glass", "headlight_damage",
+    "windshield", "mirror",
     "door", "fender", "hood", "roof", "trunk", "quarter panel",
     "side panel", "rear", "front"
 ]

@@ -731,7 +731,7 @@ def seed_s4_prev_overlap(db: Session) -> Claim:
             claimed_amount=2100.0,
         ))
     _add_claim_form_damage(
-        db, claim, damage_type="bumper_damage", severity="moderate",
+        db, claim, damage_type="dent", severity="moderate",
     )
     # Write PDF files with extractable content
     base = Path(settings.upload_dir)

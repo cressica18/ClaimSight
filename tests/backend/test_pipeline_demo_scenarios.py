@@ -471,7 +471,7 @@ def test_scenario_4_previous_claim_overlap_medium_high(
     cur_form = Damage(
         claim_id=claim.id,
         source="claim_form",
-        damage_type="bumper_damage",
+        damage_type="dent",
         severity="moderate",
         confidence=0.95,
         region_ref=None,
@@ -479,7 +479,7 @@ def test_scenario_4_previous_claim_overlap_medium_high(
     db_session.add(cur_form)
     db_session.commit()
 
-    predictor = _FakeCVPredictor(damage_type="bumper_damage", severity="moderate")
+    predictor = _FakeCVPredictor(damage_type="dent", severity="moderate")
     gemini = _FakeGeminiClient()
     out = _run_pipeline(db_session, claim, predictor=predictor, gemini=gemini)
 
@@ -588,13 +588,13 @@ def test_demo_scenario_summary(db_session, monkeypatch, tmp_path, capsys):
         claimed_amount=2200.0,
     ))
     db_session.add(Damage(
-        claim_id=claim.id, source="claim_form", damage_type="bumper_damage",
+        claim_id=claim.id, source="claim_form", damage_type="dent",
         severity="moderate", confidence=0.95, region_ref=None,
     ))
     _patch_storage_path(monkeypatch, tmp_path, claim.id, filenames=["s4.jpg", "doc.pdf"])
     out4 = _run_pipeline(
         db_session, claim,
-        predictor=_FakeCVPredictor(damage_type="bumper_damage", severity="moderate"),
+        predictor=_FakeCVPredictor(damage_type="dent", severity="moderate"),
         gemini=_FakeGeminiClient(),
     )
 

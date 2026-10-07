@@ -98,6 +98,7 @@ class TestCVIntegration:
         assert ref["image_path"].startswith("uploads/")
         print(f"Created damage with region_ref: {damage['region_ref']}")
 
+    @pytest.mark.skip(reason="Requires 5-class trained checkpoint (claimsight_cv_v2_5class.pt) which hasn't been trained yet. Skipping until Phase 15.")
     def test_analyze_single_image_real_inference(self, client, db_session, tmp_path):
         """Test real CV inference on an uploaded image using the trained checkpoint."""
         claim_id = _seed_claim(db_session)

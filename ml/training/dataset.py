@@ -47,8 +47,8 @@ from ml.training.config import (
 # Maps raw dataset class folder names → our canonical class names.
 # Update this mapping when a specific dataset is chosen.
 # 
-# Canonical damage classes: scratch, dent, crack, shattered_glass, 
-#                           bumper_damage, panel_damage, headlight_damage, no_damage
+# Canonical damage classes: scratch, dent, shattered_glass, 
+#                           headlight_damage, no_damage
 # Canonical severity classes: minor, moderate, severe
 LABEL_REMAP: dict[str, str] = {
     # ─── Severity dataset (car-damage-severity-dataset) ───
@@ -73,13 +73,8 @@ LABEL_REMAP: dict[str, str] = {
     "03-severe":         "severe",
     "scratch":           "scratch",
     "dent":              "dent",
-    "crack":             "crack",
     "broken_windshield": "shattered_glass",
     "shattered_glass":   "shattered_glass",
-    "bumper_damage":     "bumper_damage",
-    "bumper":            "bumper_damage",
-    "panel_damage":      "panel_damage",
-    "panel":             "panel_damage",
     "headlight_damage":  "headlight_damage",
     "headlight":         "headlight_damage",
     "no_damage":         "no_damage",
