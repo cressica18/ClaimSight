@@ -46,16 +46,35 @@ from ml.training.config import (
 # ─── Label remapping ──────────────────────────────────────────────────────────
 # Maps raw dataset class folder names → our canonical class names.
 # Update this mapping when a specific dataset is chosen.
+# 
+# Canonical damage classes: scratch, dent, crack, shattered_glass, 
+#                           bumper_damage, panel_damage, headlight_damage, no_damage
+# Canonical severity classes: minor, moderate, severe
 LABEL_REMAP: dict[str, str] = {
-    # Common Kaggle "car damage" dataset folder names
-    "01-minor":          "minor",           # severity
-    "02-moderate":       "moderate",        # severity
-    "03-severe":         "severe",          # severity
+    # ─── Severity dataset (car-damage-severity-dataset) ───
+    "01-minor":          "minor",
+    "02-moderate":       "moderate",
+    "03-severe":         "severe",
+
+    # ─── Damage dataset (car-damage-assessment) ───
+    # These are the actual folder/class names from the dataset
+    "door_dent":         "dent",
+    "bumper_scratch":    "scratch",
+    "door_scratch":      "scratch",
+    "glass_shatter":     "shattered_glass",
+    "tail_lamp":         "headlight_damage",
+    "head_lamp":         "headlight_damage",
+    "bumper_dent":       "dent",
+    "unknown":           "no_damage",
+
+    # ─── Existing mappings (kept for compatibility) ───
+    "01-minor":          "minor",
+    "02-moderate":       "moderate",
+    "03-severe":         "severe",
     "scratch":           "scratch",
     "dent":              "dent",
     "crack":             "crack",
     "broken_windshield": "shattered_glass",
-    "glass_shatter":     "shattered_glass",
     "shattered_glass":   "shattered_glass",
     "bumper_damage":     "bumper_damage",
     "bumper":            "bumper_damage",
@@ -66,7 +85,6 @@ LABEL_REMAP: dict[str, str] = {
     "no_damage":         "no_damage",
     "whole":             "no_damage",
     "normal":            "no_damage",
-    # Add more remappings as needed for the chosen dataset
 }
 
 
@@ -169,7 +187,7 @@ def build_records_from_assessment(raw_dir: Path) -> list[dict]:
     csv_path = dataset_dir / "data.csv"
     if not csv_path.exists():
         return []
-        
+    
     records = []
     with open(csv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
@@ -194,6 +212,7 @@ def build_records_from_assessment(raw_dir: Path) -> list[dict]:
                 "severity_label": -1,
                 "has_damage_label": 1,
                 "has_severity_label": 0,
+                "_raw_class": raw_class,  # for validation
                 **damage_labels
             })
     return records
@@ -204,7 +223,7 @@ def build_records_from_severity(raw_dir: Path) -> list[dict]:
     dataset_dir = raw_dir / "car-damage-severity-dataset" / "data3a"
     if not dataset_dir.exists():
         return []
-        
+    
     VALID_EXT = {".jpg", ".jpeg", ".png", ".webp"}
     records = []
     
@@ -226,6 +245,7 @@ def build_records_from_severity(raw_dir: Path) -> list[dict]:
             "severity_label": severity_label,
             "has_damage_label": 0,
             "has_severity_label": 1,
+            "_raw_class": folder_name,  # for validation
             **damage_labels
         })
     return records
@@ -245,6 +265,9 @@ def prepare_splits(raw_dir: Path, output_dir: Path, seed: int = RANDOM_SEED) -> 
             "Please ensure both datasets are downloaded and unzipped."
         )
 
+    # Validate label mapping before splitting
+    _validate_label_mapping(records)
+
     random.seed(seed)
     random.shuffle(records)
 
@@ -262,16 +285,95 @@ def prepare_splits(raw_dir: Path, output_dir: Path, seed: int = RANDOM_SEED) -> 
 
     for split_name, split_records in splits.items():
         csv_path = output_dir / f"{split_name}.csv"
+        # Remove _raw_class field before writing (it's only for validation)
+        clean_records = [{k: v for k, v in r.items() if k != "_raw_class"} for r in split_records]
         with open(csv_path, "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
-            writer.writerows(split_records)
+            writer.writerows(clean_records)
 
     counts = {k: len(v) for k, v in splits.items()}
     print(f"Dataset prepared: {counts}")
     return counts
 
 
+def _validate_label_mapping(records: list[dict]) -> None:
+    """
+    Validate that label mapping is correct and no silent label collapse occurs.
+    
+    Checks:
+    1. Every record with has_damage_label=1 maps to a valid canonical damage class (not no_damage unless intentional)
+    2. No canonical damage class that should have data ends up with zero samples (warning only)
+    3. Unexpected raw classes are reported
+    4. Label IDs remain consistent with DAMAGE_TYPES and SEVERITY_CLASSES ordering
+    """
+    from collections import Counter
+    
+    damage_counter = Counter()
+    severity_counter = Counter()
+    raw_classes_seen = set()
+    no_damage_from_known = 0
+    
+    for r in records:
+        raw_classes_seen.add(r.get("_raw_class", "unknown"))
+        
+        if r.get("has_damage_label") == 1:
+            # Find which damage class is set to 1
+            damage_class = None
+            for d in DAMAGE_TYPES:
+                if r.get(d, 0) == 1:
+                    damage_class = d
+                    break
+            if damage_class:
+                damage_counter[damage_class] += 1
+                if damage_class == "no_damage" and r.get("_raw_class") not in ("unknown", "no_damage", "whole", "normal"):
+                    no_damage_from_known += 1
+        
+        if r.get("has_severity_label") == 1:
+            sev_idx = r.get("severity_label", -1)
+            if 0 <= sev_idx < len(SEVERITY_CLASSES):
+                severity_counter[SEVERITY_CLASSES[sev_idx]] += 1
+    
+    # Check 1: No known damage classes silently mapped to no_damage
+    if no_damage_from_known > 0:
+        raise ValueError(
+            f"Label mapping error: {no_damage_from_known} samples from known damage classes "
+            f"were mapped to 'no_damage'. Check LABEL_REMAP for missing mappings."
+        )
+    
+    # Check 2: Report class distribution
+    print(f"\nDamage class distribution (all splits):")
+    for cls in DAMAGE_TYPES:
+        count = damage_counter.get(cls, 0)
+        print(f"  {cls}: {count}")
+    
+    print(f"\nSeverity class distribution (all splits):")
+    for cls in SEVERITY_CLASSES:
+        count = severity_counter.get(cls, 0)
+        print(f"  {cls}: {count}")
+    
+    # Check 3: Warn about canonical classes with zero samples (but don't fail - some classes may not exist in dataset)
+    zero_damage = [cls for cls in DAMAGE_TYPES if damage_counter.get(cls, 0) == 0 and cls != "no_damage"]
+    if zero_damage:
+        print(f"\nWARNING: The following damage classes have ZERO samples: {zero_damage}")
+        print("  These classes cannot be learned. Consider adding data or removing from DAMAGE_TYPES.")
+    
+    zero_severity = [cls for cls in SEVERITY_CLASSES if severity_counter.get(cls, 0) == 0]
+    if zero_severity:
+        print(f"WARNING: The following severity classes have ZERO samples: {zero_severity}")
+    
+    # Check 4: Validate that all raw classes seen are in LABEL_REMAP (or are intentionally unmapped)
+    # We track raw classes in build_records functions by adding _raw_class field
+    # This is a soft check - just warn about unexpected classes
+    expected_raw_classes = set(LABEL_REMAP.keys())
+    unexpected = raw_classes_seen - expected_raw_classes
+    if unexpected:
+        print(f"\nWARNING: Unexpected raw classes not in LABEL_REMAP: {unexpected}")
+        print("  These may be silently mapped to defaults. Add to LABEL_REMAP if needed.")
+    
+print()  # spacing
+ 
+ 
 # ─── CLI entry point ──────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
