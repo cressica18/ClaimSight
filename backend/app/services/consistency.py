@@ -86,6 +86,12 @@ class RepairItemCtx:
     operation: str | None
     cost: float | None
     labor_hours: float | None
+    # Structured fields from table extraction (optional)
+    quantity: float | None = None
+    unit_price: float | None = None
+    labor_cost: float | None = None
+    line_total: float | None = None
+    description: str | None = None
 
 
 @dataclass(frozen=True)
@@ -285,6 +291,12 @@ def build_claim_context(
                 operation=it.operation,
                 cost=float(it.cost) if it.cost is not None else None,
                 labor_hours=it.labor_hours,
+                # Try to get additional fields from document extraction
+                quantity=it.quantity if hasattr(it, 'quantity') else None,
+                unit_price=it.unit_price if hasattr(it, 'unit_price') else None,
+                labor_cost=it.labor_cost if hasattr(it, 'labor_cost') else None,
+                line_total=it.line_total if hasattr(it, 'line_total') else None,
+                description=it.description if hasattr(it, 'description') else None,
             )
             for it in est.items
         )

@@ -8,6 +8,10 @@ returns null/unknown for fields that cannot be found.
 For scanned/image-only PDFs where no text can be extracted, the module
 attempts OCR using Tesseract (if available) as a fallback. The extraction
 method (native text vs OCR) is tracked for provenance.
+
+For repair estimates and invoices, table extraction is attempted using
+pdfplumber to extract structured line items with quantities, unit prices,
+labor hours, and operation types.
 """
 
 from __future__ import annotations
@@ -22,6 +26,11 @@ import fitz  # PyMuPDF
 
 from app.models.enums import DocType
 from app.services.ocr import OCRAdapter, OCRResult, create_ocr_adapter
+from app.services.table_extractor import (
+    RepairLineItem,
+    TableExtractionResult,
+    extract_repair_tables,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -162,6 +171,39 @@ class DocumentExtractor:
         # Step 3: Native text extraction succeeded - extract fields
         fields = self._extract_fields(native_text, doc_type)
 
+        # Step 4: For estimates/invoices, attempt table extraction for structured line items
+        if doc_type in (DocType.estimate, DocType.invoice):
+            table_result = self._try_table_extraction(file_path)
+            if table_result.success:
+                # Add structured line items
+                fields["repair_items"] = [
+                    {
+                        "description": item.description,
+                        "part_name": item.part_name,
+                        "operation": item.operation,
+                        "quantity": item.quantity,
+                        "unit_price": item.unit_price,
+                        "labor_hours": item.labor_hours,
+                        "labor_cost": item.labor_cost,
+                        "line_total": item.line_total,
+                    }
+                    for item in table_result.line_items
+                ]
+                # Add table extraction metadata
+                if table_result.stated_total is not None:
+                    fields["stated_total"] = table_result.stated_total
+                if table_result.calculated_subtotal is not None:
+                    fields["calculated_subtotal"] = table_result.calculated_subtotal
+                fields["table_extraction"] = {
+                    "success": True,
+                    "item_count": len(table_result.line_items),
+                }
+                self._warnings.extend(table_result.warnings)
+            else:
+                fields["table_extraction"] = {"success": False}
+                # Fall back to line-based extraction
+                fields["repair_items"] = self._extract_repair_items(native_text)
+
         # Fallback: if policy document and no policy_number found in text, try filename
         if doc_type == DocType.policy and "policy_number" not in fields:
             policy_num = self._find_policy_number_in_filename(filename)
@@ -192,6 +234,21 @@ class DocumentExtractor:
 
         logger.info("Attempting OCR on %s", file_path)
         return self._ocr_adapter.extract_text_from_pdf(file_path)
+
+    def _try_table_extraction(self, file_path: Path) -> TableExtractionResult:
+        """Attempt table extraction for repair estimates/invoices."""
+        try:
+            logger.info("Attempting table extraction on %s", file_path)
+            return extract_repair_tables(file_path)
+        except Exception as e:
+            logger.exception("Table extraction failed for %s: %s", file_path, e)
+            return TableExtractionResult(
+                line_items=(),
+                stated_total=None,
+                calculated_subtotal=None,
+                warnings=(f"Table extraction error: {e}",),
+                success=False,
+            )
 
     def _find_policy_number_in_filename(self, filename: str) -> str | None:
         """Extract policy number from filename as a fallback."""
