@@ -1,4 +1,4 @@
-"""Document Intelligence — real PDF text extraction using PyMuPDF.
+"""Document Intelligence — real PDF text extraction with OCR fallback.
 
 This module provides the public `extract_document` function used by the
 analysis pipeline. It delegates to `DocumentExtractor` which performs
@@ -11,10 +11,13 @@ Supported document types:
 - estimate/invoice: total_estimate, repair_date, currency, repair_items, shop_name, policy_number, claim_number, vin, plate_number
 - previous_claim: previous_claim_number, incident_date, damage_summary, claimed_amount, policy_number, vin, plate_number
 
-For scanned/image-only PDFs where no text can be extracted, the module
-marks the document with `is_scanned=True` in the extracted fields and
-assigns a low confidence score. OCR support is a clearly isolated future
-extension.
+The extractor first tries native PDF text extraction via PyMuPDF.
+If the PDF appears to be scanned/image-only (minimal extractable text),
+it falls back to OCR using Tesseract (if available). The extraction
+method ("text", "ocr", "filename", "none") is stored in the extracted
+fields for provenance. If OCR is unavailable and no text can be
+extracted, the module returns an honest empty field set with a low
+confidence score.
 
 The function is safe to call repeatedly on the same Document; the
 caller is expected to skip rows whose `extraction_status != "pending"`.
@@ -68,11 +71,14 @@ def extract_document(db: Session, claim_id: int, document_id: int) -> bool:
         _mark_failed(document, db, reason=str(exc)[:500])
         return False
 
-    # Store only user-facing fields in extracted_fields.
-    # Internal metadata (warnings, scanned status) is logged but not persisted
-    # to avoid leaking implementation details to the UI. The UI can infer
-    # scan status from low confidence + empty fields.
-    document.extracted_fields = dict(result.fields)
+    # Store user-facing fields plus extraction provenance in extracted_fields.
+    # The extraction_method ("text", "ocr", "filename", "none") allows the UI
+    # to indicate how the fields were derived. This is not an internal marker
+    # but a user-facing provenance signal.
+    fields = dict(result.fields)
+    fields["extraction_method"] = result.extraction_method
+
+    document.extracted_fields = fields
     document.raw_confidence = result.raw_confidence
     document.extraction_status = ExtractionStatus.completed.value
     db.add(document)

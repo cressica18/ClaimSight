@@ -6,8 +6,8 @@ previous_claim. It extracts structured fields where reliably possible and
 returns null/unknown for fields that cannot be found.
 
 For scanned/image-only PDFs where no text can be extracted, the module
-marks the document as having low text content rather than attempting OCR.
-OCR support is a clearly isolated future extension.
+attempts OCR using Tesseract (if available) as a fallback. The extraction
+method (native text vs OCR) is tracked for provenance.
 """
 
 from __future__ import annotations
@@ -21,6 +21,7 @@ from typing import Any
 import fitz  # PyMuPDF
 
 from app.models.enums import DocType
+from app.services.ocr import OCRAdapter, OCRResult, create_ocr_adapter
 
 logger = logging.getLogger(__name__)
 
@@ -59,11 +60,13 @@ class ExtractionResult:
         raw_confidence: Overall confidence in the extraction (0.0-1.0).
         warnings: Non-fatal issues encountered during extraction.
         is_scanned: True if the document appears to be scanned (no extractable text).
+        extraction_method: "text" for native PDF text, "ocr" for OCR, "filename" for filename fallback.
     """
     fields: dict[str, Any]
     raw_confidence: float
     warnings: tuple[str, ...]
     is_scanned: bool = False
+    extraction_method: str = "text"
 
 
 class DocumentExtractor:
@@ -75,15 +78,20 @@ class DocumentExtractor:
     null) so the absence of a field is distinguishable from a field that
     was found but empty.
 
-    The extractor is deterministic and does not use any ML/OCR. It works
-    best on digitally generated PDFs. For scanned PDFs, it returns an
-    empty field set with `is_scanned=True` and a low confidence score.
+    The extractor first tries native PDF text extraction via PyMuPDF.
+    If the PDF appears to be scanned/image-only (minimal extractable text),
+    it falls back to OCR using Tesseract (if available). The extraction
+    method is tracked in the result for provenance.
+
+    For policy documents, a filename-based fallback extracts policy numbers
+    when both native text and OCR fail.
     """
 
     MIN_TEXT_LENGTH = 10  # Minimum characters to consider "not scanned"
 
-    def __init__(self) -> None:
+    def __init__(self, ocr_adapter: OCRAdapter | None = None) -> None:
         self._warnings: list[str] = []
+        self._ocr_adapter = ocr_adapter or create_ocr_adapter()
 
     def extract(self, file_path: Path, doc_type: DocType) -> ExtractionResult:
         """Extract fields from a PDF document.
@@ -93,7 +101,8 @@ class DocumentExtractor:
             doc_type: Type of document (policy, claim_form, estimate, etc.).
 
         Returns:
-            ExtractionResult with extracted fields, confidence, warnings.
+            ExtractionResult with extracted fields, confidence, warnings,
+            is_scanned flag, and extraction_method provenance.
         """
         self._warnings = []
 
@@ -107,16 +116,34 @@ class DocumentExtractor:
                 raw_confidence=0.0,
                 warnings=tuple(self._warnings),
                 is_scanned=False,
+                extraction_method="text",
             )
 
-        text = self._extract_text(file_path)
         filename = file_path.name
 
-        # If PDF parsing failed or no text extracted, try filename fallback for policy numbers
-        if not text or len(text.strip()) < self.MIN_TEXT_LENGTH:
+        # Step 1: Try native text extraction
+        native_text = self._extract_text(file_path)
+
+        # Step 2: If minimal text, try OCR fallback
+        if not native_text or len(native_text.strip()) < self.MIN_TEXT_LENGTH:
             self._warnings.append("No extractable text found; document may be scanned or image-only.")
+            ocr_result = self._try_ocr(file_path)
+
+            if ocr_result.success and ocr_result.text.strip():
+                # OCR succeeded - extract fields from OCR text
+                fields = self._extract_fields(ocr_result.text, doc_type)
+                self._warnings.extend(ocr_result.warnings)
+                confidence = self._compute_confidence(fields, doc_type, len(ocr_result.text))
+                return ExtractionResult(
+                    fields=fields,
+                    raw_confidence=confidence,
+                    warnings=tuple(self._warnings),
+                    is_scanned=True,
+                    extraction_method="ocr",
+                )
+
+            # OCR failed or unavailable - try filename fallback for policy documents
             fields = {}
-            # Fallback: extract policy number from filename for policy documents
             if doc_type == DocType.policy:
                 policy_num = self._find_policy_number_in_filename(filename)
                 if policy_num:
@@ -129,9 +156,11 @@ class DocumentExtractor:
                 raw_confidence=0.5,
                 warnings=tuple(self._warnings),
                 is_scanned=True,
+                extraction_method="filename" if fields else "none",
             )
 
-        fields = self._extract_fields(text, doc_type)
+        # Step 3: Native text extraction succeeded - extract fields
+        fields = self._extract_fields(native_text, doc_type)
 
         # Fallback: if policy document and no policy_number found in text, try filename
         if doc_type == DocType.policy and "policy_number" not in fields:
@@ -140,32 +169,29 @@ class DocumentExtractor:
                 fields["policy_number"] = policy_num
 
         # Confidence based on number of fields found and text quality
-        confidence = self._compute_confidence(fields, doc_type, len(text))
+        confidence = self._compute_confidence(fields, doc_type, len(native_text))
 
         return ExtractionResult(
             fields=fields,
             raw_confidence=confidence,
             warnings=tuple(self._warnings),
             is_scanned=False,
+            extraction_method="text",
         )
 
-        fields = self._extract_fields(text, doc_type)
+    def _try_ocr(self, file_path: Path) -> OCRResult:
+        """Attempt OCR on the PDF file."""
+        if not self._ocr_adapter.is_available():
+            self._warnings.append("Tesseract not installed; OCR fallback unavailable.")
+            return OCRResult(
+                text="",
+                page_count=0,
+                warnings=("Tesseract not installed; OCR fallback unavailable.",),
+                success=False,
+            )
 
-        # Fallback: if policy document and no policy_number found in text, try filename
-        if doc_type == DocType.policy and "policy_number" not in fields:
-            policy_num = self._find_policy_number_in_filename(filename)
-            if policy_num:
-                fields["policy_number"] = policy_num
-
-        # Confidence based on number of fields found and text quality
-        confidence = self._compute_confidence(fields, doc_type, len(text))
-
-        return ExtractionResult(
-            fields=fields,
-            raw_confidence=confidence,
-            warnings=tuple(self._warnings),
-            is_scanned=False,
-        )
+        logger.info("Attempting OCR on %s", file_path)
+        return self._ocr_adapter.extract_text_from_pdf(file_path)
 
     def _find_policy_number_in_filename(self, filename: str) -> str | None:
         """Extract policy number from filename as a fallback."""

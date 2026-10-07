@@ -141,8 +141,12 @@ def test_stub_does_not_emit_phase11_stub_marker_for_claim_form(
     assert "_phase11_stub" not in doc.extracted_fields, (
         "extraction must not surface internal markers to the UI"
     )
-    # For a blank PDF, no fields should be extracted
-    assert doc.extracted_fields == {}
+    # For a blank PDF with no policy number in filename, extraction_method is "none"
+    # and no user-facing fields are extracted
+    assert doc.extracted_fields.get("extraction_method") == "none"
+    # No other fields should be present
+    user_fields = {k: v for k, v in doc.extracted_fields.items() if k != "extraction_method"}
+    assert user_fields == {}
 
 
 def test_stub_does_not_emit_phase11_stub_marker_for_estimate(
@@ -164,7 +168,9 @@ def test_stub_does_not_emit_phase11_stub_marker_for_estimate(
     db_session.refresh(doc)
 
     assert doc.extraction_status == ExtractionStatus.completed.value
-    assert doc.extracted_fields == {}
+    assert doc.extracted_fields.get("extraction_method") == "none"
+    user_fields = {k: v for k, v in doc.extracted_fields.items() if k != "extraction_method"}
+    assert user_fields == {}
 
 
 def test_stub_extracts_policy_number_when_filename_matches(
@@ -188,7 +194,8 @@ def test_stub_extracts_policy_number_when_filename_matches(
     db_session.refresh(doc)
 
     assert doc.extraction_status == ExtractionStatus.completed.value
-    assert doc.extracted_fields == {"policy_number": "POL-99999"}
+    assert doc.extracted_fields.get("policy_number") == "POL-99999"
+    assert doc.extracted_fields.get("extraction_method") == "filename"
     # Defense against re-introducing internal markers.
     assert "_source" not in doc.extracted_fields
     assert "_phase11_stub" not in doc.extracted_fields
@@ -217,6 +224,7 @@ def test_extracts_policy_number_from_pdf_content(
 
     assert doc.extraction_status == ExtractionStatus.completed.value
     assert doc.extracted_fields.get("policy_number") == "POL-99999"
+    assert doc.extracted_fields.get("extraction_method") == "text"
     # No internal markers
     assert not any(k.startswith("_") for k in doc.extracted_fields)
 

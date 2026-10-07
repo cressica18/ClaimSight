@@ -108,12 +108,15 @@ function ExtractedFields({
       </div>
     );
   }
+  const extractionMethod = fields?.extraction_method as string | undefined;
+  const isOcr = extractionMethod === "ocr";
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
+          alignItems: "center",
           fontSize: "var(--text-xs)",
           color: "var(--color-text-muted)",
           textTransform: "uppercase",
@@ -121,12 +124,28 @@ function ExtractedFields({
         }}
       >
         <span>Extracted fields</span>
-        <span>
-          Confidence:{" "}
-          <span style={{ color: confidenceTone(rawConfidence), fontWeight: 500 }}>
-            {formatConfidence(rawConfidence)}
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+          <span>
+            Confidence:{" "}
+            <span style={{ color: confidenceTone(rawConfidence), fontWeight: 500 }}>
+              {formatConfidence(rawConfidence)}
+            </span>
           </span>
-        </span>
+          {isOcr && (
+            <span
+              style={{
+                fontSize: "var(--text-xs)",
+                padding: "1px 6px",
+                backgroundColor: "var(--color-accent)",
+                color: "#fff",
+                borderRadius: "var(--radius-sm)",
+                fontWeight: 500,
+              }}
+            >
+              OCR
+            </span>
+          )}
+        </div>
       </div>
       <ul
         style={{

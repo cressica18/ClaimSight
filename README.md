@@ -15,7 +15,7 @@ ClaimSight aims to shorten that loop by doing the cross-checking automatically a
 The full pipeline:
 
 1. **Images** — accident photos are analysed by a fine-tuned ResNet-50 computer-vision model that predicts damage type (8 classes) and severity (minor / moderate / severe).
-2. **Documents** — uploaded claim forms, repair estimates, and policy documents pass through a deterministic extraction layer using PyMuPDF. The extractor reads text from digitally generated PDFs and structures fields such as policy numbers, claim numbers, VINs, plate numbers, coverage types, dates, amounts, repair items, and more. For scanned/image-only PDFs where no text can be extracted, the module marks the document as having low text content; OCR support is a clearly isolated future extension.
+2. **Documents** — uploaded claim forms, repair estimates, and policy documents pass through a deterministic extraction layer using PyMuPDF. The extractor reads text from digitally generated PDFs and structures fields such as policy numbers, claim numbers, VINs, plate numbers, coverage types, dates, amounts, repair items, and more. For scanned/image-only PDFs where no text can be extracted, the extractor falls back to local OCR using Tesseract (if available) to recover text before running the same field extraction logic. The extraction method ("text", "ocr", "filename", "none") is stored for provenance.
 3. **Consistency rules (R1–R9)** — nine deterministic rules cross-check all the evidence: do the photos match the claimed damage? Does the repair estimate cost match the baseline for this type of damage? Has the same vehicle had the same damage repaired before? And so on.
 4. **Risk score** — a deterministic, explainable formula turns the rule firings into a 0–100 score and a Low / Medium / High band. It defines five named feature slots with blueprint weights; `f5` (anomaly/Isolation Forest) is currently a no-op, so the four active features are proportionally rescaled.
 5. **Gemini narrative** — Gemini 2.5 Flash is prompted to write a 3–6 sentence investigation summary, citing only the rule firings and evidence already computed. The recommendation (`normal` / `manual_review` / `investigate`) is computed deterministically from the risk band; Gemini's value is overwritten.
@@ -27,7 +27,7 @@ The full pipeline:
 
 - **Claim graph and evidence workflows** — create/list customers, vehicles, policies, and claims; upload/list/get images and documents; retrieve previous claims, risk evidence, and investigations; and record officer decisions. Accident and repair-estimate records are created by demo/seed paths, but no dedicated API endpoints are exposed.
 - **Image upload + CV inference** — PyTorch ResNet-50 with dual heads (damage type + severity). A demo predictor (filename-based, no checkpoint required) is available for offline review.
-- **Document upload + extraction** — uploaded PDFs are processed with PyMuPDF to extract structured fields: policy numbers, claim numbers, VINs, plate numbers, coverage types, dates, amounts, repair line items, and more. For scanned PDFs with no extractable text, the extractor returns an honest empty field set with a low confidence score; OCR is a future extension.
+- **Document upload + extraction** — uploaded PDFs are processed with PyMuPDF to extract structured fields: policy numbers, claim numbers, VINs, plate numbers, coverage types, dates, amounts, repair line items, and more. For scanned PDFs with no extractable text, the extractor falls back to local OCR using Tesseract (if installed) to recover text before running the same field extraction logic. The extraction method is stored for provenance.
 - **Nine deterministic consistency rules (R1–R9)** — pure Python, unit-testable, no LLM calls.
 - **Frozen risk engine** — five named feature slots with blueprint weights, 0–100 score, and Low / Medium / High bands. `f5` (anomaly/Isolation Forest) is currently a no-op, so the four active features are proportionally rescaled. Fully explainable; each contributing factor is labelled with the underlying risk signals and claim data that drove it.
 - **Gemini investigation layer** — optional, mockable. Strict prompt that forbids inventing numbers or making the final call. Fails gracefully (summary set to null; pipeline still completes).
@@ -76,7 +76,7 @@ The pipeline runs in a background thread in the same Python process. `POST /clai
 | Migrations     | Alembic (5 revisions)                                          |
 | Database       | PostgreSQL 15+                                                 |
 | CV model       | PyTorch, ResNet-50 (ImageNet pretrained, dual-head fine-tuned) |
-| DocIntel       | PyMuPDF (PDF text extraction, deterministic regex parsing)     |
+| DocIntel       | PyMuPDF (PDF text extraction) + Tesseract OCR (fallback)       |
 | Consistency    | Pure Python rule engine (no external dependencies)             |
 | Risk scoring   | Deterministic 5-feature weighted formula (no sklearn at runtime)|
 | LLM layer      | Gemini 2.5 Flash via `httpx`                                   |
@@ -143,6 +143,7 @@ claimsight/
 | Node.js    | 18+                         |
 | npm        | 9+                          |
 | PostgreSQL | 15+                         |
+| Tesseract  | 5.0+ (for OCR fallback on scanned PDFs) |
 
 For the optional ML training path, a PyTorch wheel is needed (CPU inference works; CUDA speeds training significantly).
 
@@ -185,7 +186,12 @@ If you don't have a key, set `USE_DEMO_GEMINI=true` — the pipeline will comple
 git clone https://github.com/cressica18/ClaimSight.git
 cd ClaimSight
 
-# 2. Backend
+# 2. Install Tesseract OCR (required for scanned PDF fallback)
+# macOS: brew install tesseract
+# Ubuntu/Debian: apt-get install tesseract-ocr
+# Windows: Download installer from https://github.com/UB-Mannheim/tesseract/wiki
+
+# 3. Backend
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
@@ -193,7 +199,7 @@ pip install -r requirements.txt -r requirements-dev.txt
 cp .env.example .env             # edit the values inside
 cd ..
 
-# 3. Frontend
+# 4. Frontend
 cd frontend
 npm install
 cd ..
@@ -332,7 +338,8 @@ Both run clean. There is no JS unit test framework in the repository; the real l
 
 These are honest, known limitations as of the current codebase. None are hidden or worked around.
 
-- **Document intelligence works on digitally generated PDFs only.** The PyMuPDF-based extractor reads text from PDFs created by standard software. For scanned/image-only PDFs where no text can be extracted, the module marks the document as having low text content and returns an empty field set with a low confidence score. OCR support is a clearly isolated future extension. Rules that depend on extracted fields (especially R9 — document field conflicts) work reliably only when documents contain extractable text.
+- **OCR quality depends on scan quality.** The Tesseract-based OCR fallback works best on clean, high-resolution scans (300+ DPI). Low-quality scans, skewed pages, or unusual fonts may produce garbled text, leading to missed or incorrect field extraction. The extraction method ("ocr") is stored in the document fields so users can identify when OCR was used.
+- **OCR is local/offline only.** No cloud document-AI services are used. Tesseract must be installed on the backend host. If Tesseract is unavailable, the extractor gracefully falls back to filename-based policy number extraction (for policy documents) or returns an honest empty field set.
 - **Single-process concurrency.** The pipeline runs in a thread inside the same uvicorn process. A partial unique index (`uq_analyses_one_running_per_claim`) provides an additional guard against concurrent running analyses, but the overall design is single-process. Running multiple uvicorn workers would need a cross-process lock (e.g. `SELECT … FOR UPDATE` on the claim row) or an external queue.
 - **No startup sweeper.** If the process dies mid-pipeline, the `Analysis` row stays in `running` state. A startup job that flips stale `running` rows to `failed` is a future task.
 - **No authentication.** The prototype assumes a single trusted user on a local machine. There is no session management, per-user audit trail, or claim-level locking.
