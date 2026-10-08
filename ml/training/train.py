@@ -9,6 +9,7 @@ Usage:
     cd /Users/dell/Documents/ClaimSight
     source backend/.venv/bin/activate
     python -m ml.training.train
+    python -m ml.training.train --resume
 
 Requires processed CSVs from:
     python -m ml.training.dataset --prepare
@@ -16,6 +17,7 @@ Requires processed CSVs from:
 
 import json
 import time
+import argparse
 from pathlib import Path
 
 import torch
@@ -25,7 +27,7 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 
 from ml.training.config import (
-    CHECKPOINT_PATH,
+    CHECKPOINT_PATH_5CLASS,
     PROCESSED_DIR,
     RESULTS_DIR,
     STAGE1_BATCH,
@@ -136,22 +138,62 @@ def run_epoch(
 
 # ─── Checkpoint ───────────────────────────────────────────────────────────────
 
-def save_checkpoint(model: DualHeadResNet50, metrics: dict, epoch: int) -> None:
+def save_checkpoint(
+    model: DualHeadResNet50,
+    optimizer: torch.optim.Optimizer,
+    scheduler: torch.optim.lr_scheduler._LRScheduler,
+    metrics: dict,
+    epoch: int,
+    stage: int,
+    best_val_f1: float,
+    history: list[dict],
+) -> None:
     WEIGHTS_DIR.mkdir(parents=True, exist_ok=True)
     torch.save(
         {
             "epoch":             epoch,
             "model_state_dict":  model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "scheduler_state_dict": scheduler.state_dict(),
             "metrics":           metrics,
+            "stage":             stage,
+            "best_val_f1":       best_val_f1,
+            "history":           history,
         },
-        CHECKPOINT_PATH,
+        CHECKPOINT_PATH_5CLASS,
     )
-    print(f"  ✓ Checkpoint saved → {CHECKPOINT_PATH}")
+    print(f"  ✓ Checkpoint saved → {CHECKPOINT_PATH_5CLASS}")
+
+
+def load_checkpoint_resume(
+    model: DualHeadResNet50,
+    optimizer: torch.optim.Optimizer | None,
+    scheduler: torch.optim.lr_scheduler._LRScheduler | None,
+    checkpoint_path: str,
+) -> tuple[int, int, float, list[dict]]:
+    """
+    Load checkpoint for resuming training.
+    Returns: (completed_epoch, start_stage, best_val_f1, history)
+    """
+    state = torch.load(checkpoint_path, map_location="cpu")
+    model.load_state_dict(state["model_state_dict"])
+    
+    completed_epoch = state.get("epoch", 0)
+    stage = state.get("stage", 1)
+    best_val_f1 = state.get("best_val_f1", 0.0)
+    history = state.get("history", [])
+    
+    if optimizer is not None and "optimizer_state_dict" in state:
+        optimizer.load_state_dict(state["optimizer_state_dict"])
+    if scheduler is not None and "scheduler_state_dict" in state:
+        scheduler.load_state_dict(state["scheduler_state_dict"])
+    
+    return completed_epoch, stage, best_val_f1, history
 
 
 # ─── Main training routine ────────────────────────────────────────────────────
 
-def train() -> None:
+def train(resume: bool = False) -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Training on: {device}")
 
@@ -177,39 +219,95 @@ def train() -> None:
 
     best_val_f1 = 0.0
     history: list[dict] = []
+    start_epoch = 1
+    start_stage = 1
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # Stage 1: train heads only
-    # ══════════════════════════════════════════════════════════════════════════
-    print("\n═══ Stage 1: Training heads only ═══")
-    optimizer1 = AdamW(
-        filter(lambda p: p.requires_grad, model.parameters()),
-        lr=STAGE1_LR, weight_decay=WEIGHT_DECAY
-    )
-    scheduler1 = CosineAnnealingLR(optimizer1, T_max=STAGE1_EPOCHS)
+    # ── Resume from checkpoint if requested ──────────────────────────────────
+    if resume:
+        if not CHECKPOINT_PATH_5CLASS.exists():
+            raise FileNotFoundError(
+                f"Resume requested but checkpoint not found: {CHECKPOINT_PATH_5CLASS}"
+            )
+        print(f"Resuming from checkpoint: {CHECKPOINT_PATH_5CLASS}")
+        
+        # Build model without pretrained weights (we'll load from checkpoint)
+        model = build_model(pretrained=False).to(device)
+        
+        # Create temporary optimizer/scheduler for loading state (will be recreated per stage)
+        temp_optimizer = AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=STAGE1_LR)
+        temp_scheduler = CosineAnnealingLR(temp_optimizer, T_max=STAGE1_EPOCHS)
+        
+        completed_epoch, loaded_stage, best_val_f1, history = load_checkpoint_resume(
+            model, temp_optimizer, temp_scheduler, str(CHECKPOINT_PATH_5CLASS)
+        )
+        
+        # Determine stage and next epoch
+        if completed_epoch >= STAGE1_EPOCHS:
+            start_stage = 2
+            start_epoch = 1  # Stage 2 starts at epoch 1
+        else:
+            start_stage = 1
+            start_epoch = completed_epoch + 1
+        
+        print(f"Resumed: stage={start_stage}, next_epoch={start_epoch}, best_val_f1={best_val_f1:.4f}")
+        print(f"  (optimizer/scheduler state {'restored' if 'optimizer_state_dict' in torch.load(CHECKPOINT_PATH_5CLASS, map_location='cpu') else 'freshly initialized'})")
+    else:
+        model = build_model(pretrained=True).to(device)
 
-    loader1_train = DataLoader(train_ds, batch_size=STAGE1_BATCH, shuffle=True,  num_workers=0, pin_memory=False)
-    loader1_val   = DataLoader(val_ds,   batch_size=STAGE1_BATCH, shuffle=False, num_workers=0, pin_memory=False)
+    criterion_damage   = nn.BCEWithLogitsLoss()
+    criterion_severity = nn.CrossEntropyLoss()
 
-    for epoch in range(1, STAGE1_EPOCHS + 1):
-        t0 = time.time()
-        train_m = run_epoch(model, loader1_train, criterion_damage, criterion_severity, optimizer1, device, train=True)
-        val_m   = run_epoch(model, loader1_val,   criterion_damage, criterion_severity, None,       device, train=False)
-        scheduler1.step()
+    # ── Data ──────────────────────────────────────────────────────────────────
+    train_csv = PROCESSED_DIR / "train.csv"
+    val_csv   = PROCESSED_DIR / "val.csv"
 
-        row = {"stage": 1, "epoch": epoch, "train": train_m, "val": val_m}
-        history.append(row)
-
-        print(
-            f"  S1 E{epoch:02d} | "
-            f"train loss={train_m['loss']:.4f} f1={train_m['damage_f1']:.4f} sev_acc={train_m['severity_acc']:.4f} | "
-            f"val   loss={val_m['loss']:.4f}  f1={val_m['damage_f1']:.4f}  sev_acc={val_m['severity_acc']:.4f} | "
-            f"{time.time()-t0:.1f}s"
+    if not train_csv.exists():
+        raise FileNotFoundError(
+            f"{train_csv} not found.\n"
+            "Run: python -m ml.training.dataset --prepare\n"
+            "after placing the dataset in ml/data/raw/"
         )
 
-        if val_m["damage_f1"] > best_val_f1:
-            best_val_f1 = val_m["damage_f1"]
-            save_checkpoint(model, val_m, epoch)
+    train_ds = CarDamageDataset(train_csv, transform=get_train_transform())
+    val_ds   = CarDamageDataset(val_csv,   transform=get_val_transform())
+
+    # ── Optimizers and schedulers will be created per stage ────
+
+    # ═════════════════════════════════════════════════════════════════════════════
+    # Stage 1: train heads only
+    # ═════════════════════════════════════════════════════════════════════════════
+    if start_stage == 1:
+        print("\n═══ Stage 1: Training heads only ═══")
+        optimizer1 = AdamW(
+            filter(lambda p: p.requires_grad, model.parameters()),
+            lr=STAGE1_LR, weight_decay=WEIGHT_DECAY
+        )
+        scheduler1 = CosineAnnealingLR(optimizer1, T_max=STAGE1_EPOCHS)
+
+        loader1_train = DataLoader(train_ds, batch_size=STAGE1_BATCH, shuffle=True,  num_workers=0, pin_memory=False)
+        loader1_val   = DataLoader(val_ds,   batch_size=STAGE1_BATCH, shuffle=False, num_workers=0, pin_memory=False)
+
+        for epoch in range(start_epoch, STAGE1_EPOCHS + 1):
+            t0 = time.time()
+            train_m = run_epoch(model, loader1_train, criterion_damage, criterion_severity, optimizer1, device, train=True)
+            val_m   = run_epoch(model, loader1_val,   criterion_damage, criterion_severity, None,       device, train=False)
+            scheduler1.step()
+
+            row = {"stage": 1, "epoch": epoch, "train": train_m, "val": val_m}
+            history.append(row)
+
+            print(
+                f"  S1 E{epoch:02d} | "
+                f"train loss={train_m['loss']:.4f} f1={train_m['damage_f1']:.4f} sev_acc={train_m['severity_acc']:.4f} | "
+                f"val   loss={val_m['loss']:.4f}  f1={val_m['damage_f1']:.4f}  sev_acc={val_m['severity_acc']:.4f} | "
+                f"{time.time()-t0:.1f}s"
+            )
+
+            if val_m["damage_f1"] > best_val_f1:
+                best_val_f1 = val_m["damage_f1"]
+                save_checkpoint(model, optimizer1, scheduler1, val_m, epoch, 1, best_val_f1, history)
+
+        start_epoch = 1
 
     # ══════════════════════════════════════════════════════════════════════════
     # Stage 2: unfreeze layer3+layer4, fine-tune
@@ -225,7 +323,7 @@ def train() -> None:
     loader2_train = DataLoader(train_ds, batch_size=STAGE2_BATCH, shuffle=True,  num_workers=0, pin_memory=False)
     loader2_val   = DataLoader(val_ds,   batch_size=STAGE2_BATCH, shuffle=False, num_workers=0, pin_memory=False)
 
-    for epoch in range(1, STAGE2_EPOCHS + 1):
+    for epoch in range(start_epoch, STAGE2_EPOCHS + 1):
         t0 = time.time()
         train_m = run_epoch(model, loader2_train, criterion_damage, criterion_severity, optimizer2, device, train=True)
         val_m   = run_epoch(model, loader2_val,   criterion_damage, criterion_severity, None,       device, train=False)
@@ -243,7 +341,7 @@ def train() -> None:
 
         if val_m["damage_f1"] > best_val_f1:
             best_val_f1 = val_m["damage_f1"]
-            save_checkpoint(model, val_m, epoch)
+            save_checkpoint(model, optimizer2, scheduler2, val_m, epoch, 2, best_val_f1, history)
 
     # ── Save training history ─────────────────────────────────────────────────
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -251,8 +349,12 @@ def train() -> None:
         json.dump(history, f, indent=2)
 
     print(f"\nTraining complete. Best val damage F1: {best_val_f1:.4f}")
-    print(f"Checkpoint: {CHECKPOINT_PATH}")
+    print(f"Checkpoint: {CHECKPOINT_PATH_5CLASS}")
 
 
+# ─── CLI entry point ──────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    train()
+    parser = argparse.ArgumentParser(description="Train ClaimSight CV model")
+    parser.add_argument("--resume", action="store_true", help="Resume from checkpoint")
+    args = parser.parse_args()
+    train(resume=args.resume)
