@@ -35,6 +35,7 @@ from app.services.consistency import (
     RepairItemCtx,
     evaluate,
     persist as persist_signals,
+    _normalize,
 )
 from app.services.risk_engine import (
     BAND_LOW_MAX,
@@ -1055,3 +1056,119 @@ def test_score_includes_audit_notes():
     """`notes` is non-empty so callers can surface 'why' in the UI."""
     rs = compute_risk_score(_base_ctx(), [])
     assert any("Anomaly (f5) feature not used" in n for n in rs.notes)
+
+
+def test_risk_score_includes_baseline_source_disclaimer():
+    """RiskScore includes baseline_source field and synthetic disclaimer in notes."""
+    rs = compute_risk_score(_base_ctx(), [])
+    # Check baseline_source field
+    assert rs.baseline_source == "synthetic:illustrative"
+    # Check disclaimer in notes
+    assert any(
+        "Repair cost baselines are synthetic/illustrative; not industry-validated" in n
+        for n in rs.notes
+    )
+    # Check that other notes are still present
+    assert any("Anomaly (f5) feature not used" in n for n in rs.notes)
+
+
+# ─── Regression tests for no_damage exclusion ───
+
+def test_primary_damage_skips_no_damage():
+    """_primary_damage must skip 'no_damage' and 'cv_error' damage types."""
+    from app.services.risk_engine import _primary_damage
+    from app.services.consistency import ClaimContext, ImageDamageCtx
+    
+    # Only no_damage available → should return None
+    ctx = _base_ctx(image_damages=(_img(damage_type="no_damage"),))
+    assert _primary_damage(ctx) is None
+
+    # Only cv_error available → should return None
+    ctx = _base_ctx(image_damages=(_img(damage_type="cv_error"),))
+    assert _primary_damage(ctx) is None
+
+    # Valid damage available → should return it
+    ctx = _base_ctx(image_damages=(_img(damage_type="scratch"),))
+    primary = _primary_damage(ctx)
+    assert primary is not None
+    assert primary[0] == "scratch"
+
+
+def test_previous_overlap_excludes_no_damage():
+    """_previous_overlap_score must exclude 'no_damage' and 'cv_error' tokens."""
+    from app.services.risk_engine import _previous_overlap_score
+    from app.services.consistency import PreviousClaimCtx
+    
+    prev = PreviousClaimCtx(
+        id=1,
+        claim_number="CLM-000",
+        incident_date=dt.date(2025, 4, 1),
+        damage_summary="rear bumper dent panel damage",
+        claimed_amount=800.0,
+        overlap_score=None,
+    )
+    
+    # Only no_damage in current claim → no overlap
+    ctx = _base_ctx(
+        previous_claims=(PreviousClaimCtx(
+            id=1, claim_number="PRV-1", incident_date=dt.date(2025, 4, 1),
+            damage_summary="rear bumper dent", claimed_amount=500.0, overlap_score=None
+        ),),
+        image_damages=(_img(damage_type="no_damage"),),
+    )
+    assert _previous_overlap_score(ctx) == 0.0
+    
+    # Only cv_error in current claim → no overlap
+    ctx = _base_ctx(
+        previous_claims=(PreviousClaimCtx(
+            id=1, claim_number="PRV-1", incident_date=dt.date(2025, 4, 1),
+            damage_summary="rear bumper dent", claimed_amount=500.0, overlap_score=None
+        ),),
+        image_damages=(_img(damage_type="cv_error"),),
+    )
+    assert _previous_overlap_score(ctx) == 0.0
+    
+    # Valid damage type that matches → overlap > 0
+    ctx = _base_ctx(
+        previous_claims=(PreviousClaimCtx(
+            id=1, claim_number="PRV-1", incident_date=dt.date(2025, 4, 1),
+            damage_summary="rear bumper dent", claimed_amount=500.0, overlap_score=None
+        ),),
+        image_damages=(_img(damage_type="dent"),),
+    )
+    assert _previous_overlap_score(ctx) > 0.0
+
+
+def test_low_data_confidence_excludes_no_damage():
+    """_low_data_confidence_fraction must exclude 'no_damage' and 'cv_error'."""
+    from app.services.risk_engine import _low_data_confidence_fraction
+    
+    # Only no_damage with low_confidence=True → should not count as low confidence input
+    ctx = _base_ctx(
+        image_damages=(_img(damage_type="no_damage", low_confidence=True),),
+    )
+    # no_damage excluded → total=0, low=0 → fraction=0.0
+    assert _low_data_confidence_fraction(ctx) == 0.0
+    
+    # Only cv_error with low_confidence=True → should not count
+    ctx = _base_ctx(
+        image_damages=(_img(damage_type="cv_error", low_confidence=True),),
+    )
+    assert _low_data_confidence_fraction(ctx) == 0.0
+    
+    # Valid damage with low_confidence=True → should count
+    ctx = _base_ctx(
+        image_damages=(_img(damage_type="scratch", low_confidence=True),),
+    )
+    # total=1, low=1 → fraction=1.0
+    assert _low_data_confidence_fraction(ctx) == 1.0
+    
+    # Mix: no_damage low + valid low → only valid counts
+    ctx = _base_ctx(
+        image_damages=(
+            _img(damage_type="no_damage", low_confidence=True),
+            _img(damage_type="scratch", low_confidence=True),
+        ),
+    )
+    # total=1 (only scratch), low=1 → fraction=1.0
+    assert _low_data_confidence_fraction(ctx) == 1.0

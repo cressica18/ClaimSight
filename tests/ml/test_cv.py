@@ -25,6 +25,9 @@ ML_ROOT = Path(__file__).resolve().parents[2] / "ml"
 if str(ML_ROOT) not in sys.path:
     sys.path.insert(0, str(ML_ROOT.parent))
 
+# Import config for class counts
+from ml.training.config import NUM_DAMAGE_CLASSES, NUM_SEVERITY_CLASSES
+
 # ─── Model tests ──────────────────────────────────────────────────────────────
 
 class TestDualHeadResNet50:
@@ -42,8 +45,8 @@ class TestDualHeadResNet50:
         x = torch.randn(2, 3, 224, 224)
         with torch.no_grad():
             d_logits, s_logits = model(x)
-        assert d_logits.shape == (2, 8), f"Expected (2,8), got {d_logits.shape}"
-        assert s_logits.shape == (2, 3), f"Expected (2,3), got {s_logits.shape}"
+        assert d_logits.shape == (2, NUM_DAMAGE_CLASSES), f"Expected (2,{NUM_DAMAGE_CLASSES}), got {d_logits.shape}"
+        assert s_logits.shape == (2, NUM_SEVERITY_CLASSES), f"Expected (2,{NUM_SEVERITY_CLASSES}), got {s_logits.shape}"
 
     def test_freeze_backbone_reduces_trainable_params(self):
         from ml.training.model import DualHeadResNet50
@@ -67,8 +70,8 @@ class TestDualHeadResNet50:
         model = DualHeadResNet50(pretrained=False)
         x = torch.randn(1, 3, 224, 224)
         d_probs, s_probs = model.predict(x)
-        assert d_probs.shape == (1, 8)
-        assert s_probs.shape == (1, 3)
+        assert d_probs.shape == (1, NUM_DAMAGE_CLASSES)
+        assert s_probs.shape == (1, NUM_SEVERITY_CLASSES)
         assert (d_probs >= 0).all() and (d_probs <= 1).all(), "Damage probs out of [0,1]"
         assert abs(float(s_probs.sum()) - 1.0) < 1e-4, "Severity probs must sum to 1"
 
@@ -85,7 +88,7 @@ class TestDualHeadResNet50:
         # Forward pass should still work
         x = torch.randn(1, 3, 224, 224)
         d, s = loaded(x)
-        assert d.shape == (1, 8)
+        assert d.shape == (1, NUM_DAMAGE_CLASSES)
 
 
 # ─── Transform tests ──────────────────────────────────────────────────────────
@@ -136,7 +139,7 @@ class TestVehicleDamagePredictor:
         if damage_probs is not None or sev_probs is not None:
             # Patch predict to return controlled probabilities
             def fake_predict(x):
-                d = damage_probs if damage_probs is not None else torch.zeros(1, 8)
+                d = damage_probs if damage_probs is not None else torch.zeros(1, NUM_DAMAGE_CLASSES)
                 s = sev_probs   if sev_probs   is not None else torch.tensor([[0.0, 0.8, 0.2]])
                 return d, s
             predictor._model.predict = fake_predict
@@ -157,7 +160,7 @@ class TestVehicleDamagePredictor:
     def test_predict_sets_low_confidence_when_probs_low(self, tmp_path):
         """When top damage prob < LOW_CONF_DAMAGE, low_confidence must be True."""
         # All damage probs = 0.1 (< threshold 0.4)
-        low_d = torch.full((1, 8), 0.1)
+        low_d = torch.full((1, NUM_DAMAGE_CLASSES), 0.1)
         low_s = torch.tensor([[0.4, 0.3, 0.3]])   # top sev < 0.5
 
         predictor = self._make_fake_predictor(tmp_path, damage_probs=low_d, sev_probs=low_s)
@@ -170,7 +173,7 @@ class TestVehicleDamagePredictor:
     def test_predict_no_low_confidence_when_probs_high(self, tmp_path):
         """When damage prob ≥ 0.4 and severity ≥ 0.5, low_confidence must be False."""
         # scratch has high confidence
-        d = torch.zeros(1, 8)
+        d = torch.zeros(1, NUM_DAMAGE_CLASSES)
         d[0][0] = 0.85   # scratch = 0.85 (index 0)
         s = torch.tensor([[0.05, 0.80, 0.15]])   # moderate = 0.80
 

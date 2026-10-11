@@ -105,8 +105,10 @@ _MINIMAL_PDF_BYTES = (
     b"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n"
     b"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>\nendobj\n"
     b"xref\n0 4\n0000000000 65535 f \n"
-    b"0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \n"
-    b"trailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n183\n%%EOF\n"
+    b"0000000010 00000 n \n"
+    b"0000000060 00000 n \n"
+    b"0000000115 00000 n \n"
+    b"trailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n190\n%%EOF\n"
 )
 
 

@@ -48,6 +48,21 @@ from app.models.enums import (
 from app.models.evidence import Evidence
 from app.models.investigation import Investigation
 from app.models.policy import Policy
+from tests.backend.test_pipeline_demo_scenarios import _add_pending_image
+
+
+# Minimal valid PDF for testing (single blank page)
+_MINIMAL_PDF_BYTES = (
+    b"%PDF-1.4\n"
+    b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
+    b"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n"
+    b"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>\nendobj\n"
+    b"xref\n0 4\n0000000000 65535 f \n"
+    b"0000000010 00000 n \n"
+    b"0000000060 00000 n \n"
+    b"0000000115 00000 n \n"
+    b"trailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n190\n%%EOF\n"
+)
 from app.models.risk_signal import RiskSignal
 from app.models.repair import RepairEstimate
 from app.models.vehicle import Vehicle
@@ -208,15 +223,18 @@ def _seed_claim(
     return claim
 
 
-def _patch_storage_path(monkeypatch, tmp_path: Path) -> None:
+def _patch_storage_path(monkeypatch, tmp_path: Path, *, filenames: list[str] | None = None) -> None:
     """Make the document_intelligence stub see a real file on disk so
     it does not flip the document to `failed` (which would conflate
     'extraction failed' with 'storage missing').
     """
     base = tmp_path
-    # Any file_path our seed claims will land here.
     (base / "1").mkdir(parents=True, exist_ok=True)
-    (base / "1" / "pipe-doc-1.pdf").write_bytes(b"%PDF-stub")
+    for name in (filenames or ["pipe-doc-1.pdf"]):
+        if name.lower().endswith(".pdf"):
+            (base / "1" / name).write_bytes(_MINIMAL_PDF_BYTES)
+        else:
+            (base / "1" / name).write_bytes(b"\xff\xd8\xff\xe0" + b"\x00" * 32 + b"\xff\xd9")
     monkeypatch.setattr(
         "app.services.document_intelligence.settings.upload_dir",
         str(base),
@@ -734,11 +752,10 @@ def test_start_analysis_returns_202(client, db_session, monkeypatch, tmp_path):
         lambda *a, **kw: FakeGeminiClient(),
     )
 
-    # Replace the threaded runner with an in-process call so the
-    # in-memory SQLite sees the data. We also track the thread so
-    # the test can wait for the synchronous work to finish.
-    threads: list[threading.Thread] = []
-
+# Replace the threaded runner with an in-process call so the
+    # in-memory SQLite sees the data. Also prevent the background
+    # thread from being created so the lock is acquired and released
+    # in the same thread.
     def sync_run_in_thread(claim_id, analysis_id):  # type: ignore[no-untyped-def]
         pipeline_service.run_analysis_steps(
             claim_id, analysis_id, db_session,
@@ -747,7 +764,14 @@ def test_start_analysis_returns_202(client, db_session, monkeypatch, tmp_path):
         )
         pipeline_locks.release(claim_id)
 
+    # Prevent background thread creation by making Thread class
+    # run the target synchronously in start().
+    class SyncThread(threading.Thread):
+        def start(self):
+            self._target(*self._args, **self._kwargs)
+
     monkeypatch.setattr("app.api.pipeline._run_in_thread", sync_run_in_thread)
+    monkeypatch.setattr(threading, "Thread", SyncThread)
 
     response = client.post(f"/claims/{claim.id}/analyze")
     assert response.status_code == 202, response.text
@@ -757,15 +781,9 @@ def test_start_analysis_returns_202(client, db_session, monkeypatch, tmp_path):
     assert "analysis_id" in body
     assert body["analysis_id"] > 0
 
-    # The real production code uses a real `threading.Thread` to
-    # run the worker. The test's monkeypatch makes the worker
-    # synchronous, but the thread is still started. We give it a
-    # moment to finish so the lock-release assertion holds.
-    time.sleep(0.2)
-
-    # The row exists; the lock has been released.
+    # The worker ran synchronously; lock should be released.
     analysis_id = body["analysis_id"]
-    a = db_session.get(Analysis, analysis_id)
+    a = db_session.get(Analysis, body["analysis_id"])
     assert a is not None
     assert a.claim_id == claim.id
     assert not pipeline_locks.is_held(claim.id)
@@ -783,13 +801,17 @@ def test_r4_fires_when_repair_total_exceeds_baseline(db_session, monkeypatch, tm
     repair estimate) and 5 (multi-signal suspicious) from producing
     their documented Medium/High bands.
     """
-    _patch_storage_path(monkeypatch, tmp_path)
-    # Claim with a pending image (gets CV-detected as `dent`, severe).
-    # The CV predictor returns "dent" + "severe".
+    # Create claim and pending image with matching filename
+    _patch_storage_path(monkeypatch, tmp_path, filenames=["test.jpg"])
+    # Claim with a pending image (gets CV-detected as `dent`, moderate).
     predictor = FakeCVPredictor(damage_type="dent")
     gemini = FakeGeminiClient()
-    # Use a custom seed that lets us attach a RepairEstimate after.
     claim = _seed_claim(db_session, claim_number="CLM-PIPE-R4")
+    # Add a pending image so the pipeline has something to analyze.
+    # The CV predictor will process it and create a dent/moderate damage row.
+    _add_pending_image(db_session, claim, image_id="test.jpg")
+    db_session.commit()
+
     # Force the CV-detected severity by setting it post-hoc after the
     # pipeline stub will run. Easiest approach: also seed a claim-form
     # damage row whose severity R4 will read from the primary-damage

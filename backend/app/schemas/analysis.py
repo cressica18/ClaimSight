@@ -29,6 +29,7 @@ class AnalysisResultSummary(BaseModel):
     signal_count: int
     evidence_count: int
     investigation_id: int | None
+    baseline_source: str | None = None
 
 
 class AnalysisStatusResponse(BaseModel):

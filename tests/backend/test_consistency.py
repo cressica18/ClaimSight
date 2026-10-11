@@ -191,16 +191,18 @@ def test_r1_does_not_trigger_when_no_claim_form_damages():
     assert r1_unsupported_damage(ctx) is None
 
 
-def test_r1_does_not_trigger_when_all_cv_detections_are_low_confidence():
-    """Per blueprint: 'image confidence is not low' gates the support check."""
+def test_r1_fires_insufficient_support_when_all_cv_low_confidence():
+    """When all CV detections are low-confidence, R1 fires explicit signal."""
     ctx = _base_ctx(
         image_damages=(_img(damage_type="scratch", low_confidence=True),),
         claim_form_damages=(
             _img(id=2, source="claim_form", damage_type="headlight_damage"),
         ),
     )
-    # No high-confidence CV detection exists, so we cannot evaluate support.
-    assert r1_unsupported_damage(ctx) is None
+    sig = r1_unsupported_damage(ctx)
+    assert sig is not None
+    assert sig.rule_id == "R1_insufficient_cv_support"
+    assert "no reliable" in sig.description.lower()
 
 
 # ─── R2 — severity_mismatch ─────────────────────────────────────────────────
@@ -749,3 +751,123 @@ def test_persist_commits_signals_to_database(db_session):
     rule_ids = {s.rule_id for s in signals}
     assert "R1_unsupported_damage" in rule_ids
     assert "R8_near_policy_boundary" in rule_ids
+
+
+# ─── Regression tests for no_damage, cv_error, and severity keyword fixes ───
+
+def test_r1_no_damage_not_treated_as_supporting_cv():
+    """R1 must not treat CV's 'no_damage' prediction as supporting evidence."""
+    ctx = _base_ctx(
+        image_damages=(_img(damage_type="no_damage", low_confidence=False),),
+        claim_form_damages=(_img(id=2, source="claim_form", damage_type="scratch"),),
+    )
+    # CV only saw "no_damage" (not a real damage), so no reliable CV support → fires insufficient support
+    sig = r1_unsupported_damage(ctx)
+    assert sig is not None
+    assert sig.rule_id == "R1_insufficient_cv_support"
+    assert "no reliable" in sig.description.lower()
+
+
+def test_r1_no_damage_in_claim_form_not_treated_as_real_damage():
+    """R1 must not treat 'no_damage' from claim form as a real damage type."""
+    ctx = _base_ctx(
+        image_damages=(_img(damage_type="scratch"),),
+        claim_form_damages=(_img(id=2, source="claim_form", damage_type="no_damage"),),
+    )
+    # claim_form lists only "no_damage" which is not a real damage → no unsupported
+    assert r1_unsupported_damage(ctx) is None
+
+
+def test_r1_insufficient_cv_support_signal_when_all_low_confidence():
+    """When all CV detections are low-confidence, R1 fires explicit signal."""
+    ctx = _base_ctx(
+        image_damages=(_img(damage_type="scratch", low_confidence=True),),
+        claim_form_damages=(_img(id=2, source="claim_form", damage_type="headlight_damage"),),
+    )
+    sig = r1_unsupported_damage(ctx)
+    assert sig is not None
+    assert sig.rule_id == "R1_insufficient_cv_support"
+    assert "no reliable" in sig.description.lower()
+
+
+def test_r2_severity_keyword_priority_totaled_beats_scratch():
+    """Severe keyword 'totaled' must beat minor keyword 'scratch'."""
+    ctx = _base_ctx(
+        accident_description="Vehicle was completely totaled, just a minor scratch.",
+        image_damages=(_img(damage_type="scratch", severity="minor"),),
+    )
+    sig = r2_severity_mismatch(ctx)
+    # Text says "totaled" (severe=2), CV says minor (0) → delta=2 → fire
+    assert sig is not None
+    assert sig.rule_id == "R2_severity_mismatch"
+    assert "differ by 2" in sig.description
+
+
+def test_r2_no_damage_excluded_from_severity_comparison():
+    """CV 'no_damage' with severity should not trigger R2."""
+    ctx = _base_ctx(
+        accident_description="Vehicle was completely totaled.",
+        image_damages=(_img(damage_type="no_damage", severity="severe"),),
+    )
+    # no_damage severity should be ignored, so cv_rank is None → no signal
+    assert r2_severity_mismatch(ctx) is None
+
+
+def test_r5_no_damage_excluded_from_token_overlap():
+    """R5 token overlap must ignore 'no_damage' tokens."""
+    prev = PreviousClaimCtx(
+        id=1,
+        claim_number="CLM-000",
+        incident_date=dt.date(2025, 4, 1),
+        damage_summary="rear bumper dent panel damage from collision",
+        claimed_amount=800.0,
+        overlap_score=None,
+    )
+    ctx = _base_ctx(
+        incident_date=dt.date(2025, 6, 15),
+        previous_claims=(prev,),
+        # Current claim only has no_damage → no tokens should match
+        image_damages=(_img(damage_type="no_damage"),),
+    )
+    # no_damage excluded → no overlap → no signal
+    assert r5_duplicate_previous_damage(ctx) is None
+
+
+def test_r5_cv_error_excluded_from_token_overlap():
+    """R5 token overlap must ignore 'cv_error' tokens."""
+    prev = PreviousClaimCtx(
+        id=1,
+        claim_number="CLM-000",
+        incident_date=dt.date(2025, 4, 1),
+        damage_summary="rear bumper dent panel damage",
+        claimed_amount=800.0,
+        overlap_score=None,
+    )
+    ctx = _base_ctx(
+        incident_date=dt.date(2025, 6, 15),
+        previous_claims=(prev,),
+        # cv_error should be excluded from tokens
+        image_damages=(_img(damage_type="cv_error"),),
+    )
+    assert r5_duplicate_previous_damage(ctx) is None
+
+
+def test_cv_error_excluded_from_consistency_rules():
+    """cv_error damage type should not be treated as a real damage in any rule."""
+    # Build context with only cv_error damage
+    ctx = _base_ctx(
+        image_damages=(_img(damage_type="cv_error", confidence=0.0),),
+        claim_form_damages=(
+            _img(id=2, source="claim_form", damage_type="scratch"),
+        ),
+    )
+    # R1 should see no reliable CV support (cv_error excluded)
+    sig = r1_unsupported_damage(ctx)
+    assert sig is not None
+    assert sig.rule_id == "R1_insufficient_cv_support"
+    # R2 should not fire (no valid CV severity)
+    assert r2_severity_mismatch(ctx) is None
+    # R3 should not fire (no damage types)
+    assert r3_repair_component_mismatch(ctx) is None
+    # R6 should not fire (no real damage types)
+    assert r6_policy_coverage_mismatch(ctx) is None

@@ -68,6 +68,12 @@ class Settings(BaseSettings):
     # in CI without changing the production behaviour.
     gemini_retry_backoff_seconds: float = 2.0
 
+    # ─── CV Model (Phase 15+) ──────────────────────────────────────────────────
+    # Path to the CV model checkpoint. Defaults to the original 8-class checkpoint.
+    # Can be overridden via CV_CHECKPOINT_PATH env var to use a 5-class checkpoint.
+    # The path is relative to the project root, or absolute.
+    cv_checkpoint_path: str = "ml/weights/claimsight_cv_v1.pt"
+
 
 @lru_cache
 def get_settings() -> Settings:

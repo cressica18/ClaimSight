@@ -162,28 +162,33 @@ def analyze_single_image(
 
     # Return the analysis result from the first created damage
     if damages and damages[0].damage_type != "cv_error":
+        # Use the predictor's model_version and severity confidence directly
+        # by extracting from the first damage's region_ref meta
+        model_version = "unknown"
+        severity_confidence = 0.0
+        low_confidence = False
+        timestamp = None
+        if damages[0].region_ref:
+            try:
+                meta = json.loads(damages[0].region_ref)
+                model_version = meta.get("model_version", "unknown")
+                severity_confidence = meta.get("severity_confidence", 0.0)
+                low_confidence = meta.get("low_confidence", False)
+                timestamp = meta.get("timestamp")
+            except json.JSONDecodeError:
+                pass
+
         result = CVAnalysisResult(
             damage_id=damages[0].id,
             claim_id=id,
             damage_types=[DamageTypeResult(label=d.damage_type, confidence=d.confidence or 0.0) for d in damages],
-            severity=SeverityResult(label=damages[0].severity or "unknown", confidence=0.0),
-            low_confidence=False,
+            severity=SeverityResult(label=damages[0].severity or "unknown", confidence=severity_confidence),
+            low_confidence=low_confidence,
             source_image=damage.region_ref,
-            model_version="claimsight_cv_v1",
-            timestamp=None,
+            model_version=model_version,
+            timestamp=timestamp,
             error=None,
         )
-        # Try to extract low_confidence and severity confidence from region_ref
-        if damages[0].region_ref:
-            try:
-                meta = json.loads(damages[0].region_ref)
-                result.low_confidence = meta.get("low_confidence", False)
-                if damages[0].severity:
-                    result.severity.confidence = meta.get("severity_confidence", 0.0)
-                result.model_version = meta.get("model_version", "claimsight_cv_v1")
-                result.timestamp = meta.get("timestamp")
-            except json.JSONDecodeError:
-                pass
         return result
     else:
         # Error case
@@ -194,7 +199,7 @@ def analyze_single_image(
             severity=SeverityResult(label="unknown", confidence=0.0),
             low_confidence=True,
             source_image=damage.region_ref,
-            model_version="claimsight_cv_v1",
+            model_version="unknown",
             timestamp=None,
             error="CV inference failed",
         )
@@ -239,27 +244,32 @@ def analyze_all_images(
         new_damages = run_cv_on_image(db, id, damage.region_ref)
 
         if new_damages and new_damages[0].damage_type != "cv_error":
+            # Use the predictor's model_version and severity confidence directly
+            model_version = "unknown"
+            severity_confidence = 0.0
+            low_confidence = False
+            timestamp = None
+            if new_damages[0].region_ref:
+                try:
+                    meta = json.loads(new_damages[0].region_ref)
+                    model_version = meta.get("model_version", "unknown")
+                    severity_confidence = meta.get("severity_confidence", 0.0)
+                    low_confidence = meta.get("low_confidence", False)
+                    timestamp = meta.get("timestamp")
+                except json.JSONDecodeError:
+                    pass
+
             result = CVAnalysisResult(
                 damage_id=new_damages[0].id,
                 claim_id=id,
                 damage_types=[DamageTypeResult(label=d.damage_type, confidence=d.confidence or 0.0) for d in new_damages],
-                severity=SeverityResult(label=new_damages[0].severity or "unknown", confidence=0.0),
-                low_confidence=False,
+                severity=SeverityResult(label=new_damages[0].severity or "unknown", confidence=severity_confidence),
+                low_confidence=low_confidence,
                 source_image=damage.region_ref,
-                model_version="claimsight_cv_v1",
-                timestamp=None,
+                model_version=model_version,
+                timestamp=timestamp,
                 error=None,
             )
-            if new_damages[0].region_ref:
-                try:
-                    meta = json.loads(new_damages[0].region_ref)
-                    result.low_confidence = meta.get("low_confidence", False)
-                    if new_damages[0].severity:
-                        result.severity.confidence = meta.get("severity_confidence", 0.0)
-                    result.model_version = meta.get("model_version", "claimsight_cv_v1")
-                    result.timestamp = meta.get("timestamp")
-                except json.JSONDecodeError:
-                    pass
         else:
             result = CVAnalysisResult(
                 damage_id=damage.id,
@@ -268,7 +278,7 @@ def analyze_all_images(
                 severity=SeverityResult(label="unknown", confidence=0.0),
                 low_confidence=True,
                 source_image=damage.region_ref,
-                model_version="claimsight_cv_v1",
+                model_version="unknown",
                 timestamp=None,
                 error="CV inference failed",
             )

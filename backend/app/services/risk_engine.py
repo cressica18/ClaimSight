@@ -50,6 +50,7 @@ from app.services.consistency import (
     ClaimContext,
     ImageDamageCtx,
     PreviousClaimCtx,
+    _normalize,
 )
 
 logger = logging.getLogger(__name__)
@@ -107,6 +108,7 @@ class RiskScore:
     low_data_confidence: bool
     factors: tuple[ContributingFactor, ...]
     baseline: BaselineRange | None
+    baseline_source: str = "synthetic:illustrative"
     notes: tuple[str, ...] = ()
 
 
@@ -332,12 +334,21 @@ def _primary_damage(
     1. The first CV-confirmed (high-confidence) image damage.
     2. The first claim-form damage.
     3. None.
+
+    Excludes "no_damage" and "cv_error" as they are not real damage types
+    and should not be used for baseline cost lookups.
     """
     for d in ctx.image_damages:
         if d.damage_type and not d.low_confidence:
+            dt_norm = _normalize(d.damage_type)
+            if dt_norm in {"no_damage", "cv_error"}:
+                continue
             return d.damage_type, d.severity or "moderate"
     for d in ctx.claim_form_damages:
         if d.damage_type:
+            dt_norm = _normalize(d.damage_type)
+            if dt_norm in {"no_damage", "cv_error"}:
+                continue
             return d.damage_type, d.severity or "moderate"
     return None
 
@@ -374,15 +385,24 @@ def _previous_overlap_score(ctx: ClaimContext) -> float:
     measure on a small token set). It is what R5 already inspects
     qualitatively; the engine quantifies the same signal for the
     score. Returns 0..1.
+
+    Excludes "no_damage" and "cv_error" as they are not meaningful
+    for overlap detection.
     """
     if not ctx.previous_claims:
         return 0.0
     current_tokens: set[str] = set()
     for d in ctx.image_damages:
         if d.damage_type:
+            dt_norm = _normalize(d.damage_type)
+            if dt_norm in {"no_damage", "cv_error"}:
+                continue
             current_tokens.update(_tokenise_damage(d.damage_type))
     for d in ctx.claim_form_damages:
         if d.damage_type:
+            dt_norm = _normalize(d.damage_type)
+            if dt_norm in {"no_damage", "cv_error"}:
+                continue
             current_tokens.update(_tokenise_damage(d.damage_type))
     if not current_tokens:
         return 0.0
@@ -410,7 +430,8 @@ def _low_data_confidence_fraction(ctx: ClaimContext) -> float:
     Inputs we count:
     - Each document whose extraction produced no structured fields
       (`extracted_fields` empty) or whose `raw_confidence` < 0.5.
-    - Each image damage with `low_confidence=True`.
+    - Each image damage with `low_confidence=True`, excluding
+      "no_damage" and "cv_error" predictions (not meaningful damage detections).
     """
     if not ctx.documents and not ctx.image_damages:
         return 0.0
@@ -421,6 +442,10 @@ def _low_data_confidence_fraction(ctx: ClaimContext) -> float:
         if doc.extracted_fields is None or (doc.raw_confidence is not None and doc.raw_confidence < 0.5):
             low += 1
     for dmg in ctx.image_damages:
+        dt_norm = _normalize(dmg.damage_type) if dmg.damage_type else ""
+        if dt_norm in {"no_damage", "cv_error"}:
+            # Exclude placeholder/error damage types from confidence calculation
+            continue
         total += 1
         if dmg.low_confidence:
             low += 1
@@ -639,12 +664,17 @@ def compute_risk_score(
             f"Baseline supplied by caller: {baseline.segment}/"
             f"{baseline.damage_type}/{baseline.severity}, n={baseline.n}."
         )
+    # Synthetic baseline disclaimer
+    notes.append(
+        "Repair cost baselines are synthetic/illustrative; not industry-validated."
+    )
     return RiskScore(
         score=round(result.score, 2),
         band=result.final_band,
         low_data_confidence=result.low_data_confidence,
         factors=result.factors,
         baseline=result.baseline,
+        baseline_source="synthetic:illustrative",
         notes=tuple(notes),
     )
 

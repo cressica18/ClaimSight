@@ -268,9 +268,11 @@ def build_claim_context(
 
     # All damages for the claim, partitioned by source
     all_damages = list(claim.damages)
-    image_damages = tuple(_parse_image_damage(d) for d in all_damages if d.source == "image")
+    # Filter out cv_error damage types — they are inference failures, not damage detections
+    valid_damages = [d for d in all_damages if d.damage_type != "cv_error"]
+    image_damages = tuple(_parse_image_damage(d) for d in valid_damages if d.source == "image")
     claim_form_damages = tuple(
-        _parse_image_damage(d) for d in all_damages if d.source == "claim_form"
+        _parse_image_damage(d) for d in valid_damages if d.source == "claim_form"
     )
 
     # Accident (1:1)
@@ -397,6 +399,11 @@ def _normalize(s: str | None) -> str:
 # ─── Rule R1: unsupported_damage ─────────────────────────────────────────────
 # Trigger: a claim_form damage area has no corresponding CV detection
 # (and the CV detection is not low-confidence). Severity: High.
+#
+# NOTE: "no_damage" and "cv_error" are not considered real damage detections.
+# If no reliable (high-confidence, non-placeholder) CV detections exist,
+# the rule fires an explicit "insufficient CV support" signal instead of
+# silently returning None.
 
 
 def r1_unsupported_damage(ctx: ClaimContext) -> RiskSignal | None:
@@ -404,27 +411,46 @@ def r1_unsupported_damage(ctx: ClaimContext) -> RiskSignal | None:
     if not ctx.claim_form_damages:
         return None
 
-    # Build the set of CV-detected damage types, but ONLY from
-    # detections that are not flagged as low_confidence (per the rule
-    # text: "image confidence is not low"). Severity of detection
-    # does not gate the support check.
+    # Damage types that are NOT considered real damage detections.
+    _NON_DAMAGE_TYPES = {"no_damage", "cv_error"}
+
+    # Build the set of CV-detected damage types that are reliable:
+    # - Must have a damage_type
+    # - Must not be low_confidence
+    # - Must not be a placeholder type (no_damage, cv_error)
     cv_types: set[str] = {
         _normalize(d.damage_type)
         for d in ctx.image_damages
-        if d.damage_type and not d.low_confidence
+        if d.damage_type
+        and not d.low_confidence
+        and _normalize(d.damage_type) not in _NON_DAMAGE_TYPES
     }
-    # If no high-confidence CV detections exist at all, there is no
-    # "support" to evaluate; the rule does not fire.
-    if not cv_types:
-        return None
 
-    # Each claim_form area must have a matching CV detection. Compare
-    # on the normalized damage_type (exact match — synonyms are a
-    # separate concern and out of scope for the deterministic rules).
+    # If no reliable CV detections exist, fire an explicit signal
+    # instead of silently returning None.
+    if not cv_types:
+        description = (
+            "CV model produced no reliable (high-confidence, non-placeholder) "
+            "damage detections to support claim-form damage areas."
+        )
+        return _make_signal(
+            claim_id=ctx.claim_id,
+            rule_id="R1_insufficient_cv_support",
+            category="image_claim_consistency",
+            severity=SignalSeverity.high,
+            description=description,
+        )
+
+    # Each claim_form area must have a matching CV detection.
+    # Compare on the normalized damage_type.
+    # Exclude claim_form "no_damage" — it is not a real damage type.
     unsupported: list[str] = []
     for d in ctx.claim_form_damages:
         key = _normalize(d.damage_type)
         if not key:
+            continue
+        if key in _NON_DAMAGE_TYPES:
+            # claim_form "no_damage" is not a real damage; skip it.
             continue
         if key not in cv_types:
             unsupported.append(d.damage_type or key)
@@ -448,6 +474,10 @@ def r1_unsupported_damage(ctx: ClaimContext) -> RiskSignal | None:
 # ─── Rule R2: severity_mismatch ──────────────────────────────────────────────
 # Trigger: claim description severity language differs from CV severity
 # by ≥2 levels. Severity: Medium.
+#
+# NOTE: "no_damage" and "cv_error" detections are excluded from CV severity
+# comparison. Severity keywords are ranked so that severe terms (totaled,
+# destroyed) take priority over minor terms (scratch, small).
 
 
 _SEVERITY_RANK = {
@@ -456,7 +486,9 @@ _SEVERITY_RANK = {
     DamageSeverity.severe.value: 2,
 }
 
-# Order matters: we use the first match wins.
+# Order matters: we iterate from highest severity to lowest, so the
+# FIRST match (most severe) wins. This ensures "totaled" (severe) beats
+# "scratch" (minor) when both appear in the same text.
 _SEVERITY_KEYWORDS: list[tuple[set[str], int]] = [
     ({"totaled", "destroyed", "write-off", "writeoff", "wrecked", "demolished"}, 2),  # severe
     ({"severe", "major", "heavy", "extensive", "significant"}, 2),  # severe
@@ -469,9 +501,8 @@ def _extract_text_severity(text: str | None) -> int | None:
     """Return the severity rank (0=minor, 1=moderate, 2=severe) implied
     by the description, or None if no severity language is present.
 
-    Highest-priority match wins: if a description mentions both
-    "scratch" and "destroyed", "destroyed" wins because it is a stronger
-    signal of damage extent.
+    Highest-priority match wins: severe terms take priority over minor
+    terms because _SEVERITY_KEYWORDS is ordered from severe to minor.
     """
     if not text:
         return None
@@ -488,11 +519,16 @@ def _extract_text_severity(text: str | None) -> int | None:
 def _worst_cv_severity(ctx: ClaimContext) -> tuple[str | None, int | None]:
     """Return (label, rank) of the worst CV-detected severity, or
     (None, None) if there are no CV severities to compare against.
+
+    Excludes "no_damage" and "cv_error" detections as they are not
+    meaningful for severity comparison.
     """
     worst_label: str | None = None
     worst_rank: int | None = None
     for d in ctx.image_damages:
         if d.severity is None or d.severity == "pending" or d.severity == "unknown":
+            continue
+        if _normalize(d.damage_type) in {"no_damage", "cv_error"}:
             continue
         rank = _SEVERITY_RANK.get(d.severity)
         if rank is None:
@@ -702,6 +738,9 @@ def _regions_overlap(prev_summary: str | None, current_damages: tuple[ImageDamag
 
     The "no previous summary" branch returns False rather than guessing
     so that the rule only fires when there is positive evidence.
+
+    Excludes "no_damage" and "cv_error" damage types as they are not
+    meaningful for region overlap detection.
     """
     if not prev_summary:
         return False
@@ -710,6 +749,9 @@ def _regions_overlap(prev_summary: str | None, current_damages: tuple[ImageDamag
         return False
     for d in current_damages:
         if not d.damage_type:
+            continue
+        dt_norm = _normalize(d.damage_type)
+        if dt_norm in {"no_damage", "cv_error"}:
             continue
         dt = d.damage_type.lower()
         if dt in prev_tokens:
@@ -786,6 +828,9 @@ _COVERAGE_DAMAGE_TYPES: dict[str, set[str]] = {
 }
 
 
+_NON_DAMAGE_TYPES = {"no_damage", "cv_error", "pending"}
+
+
 def r6_policy_coverage_mismatch(ctx: ClaimContext) -> RiskSignal | None:
     """A damage type on the claim is not covered by the policy type."""
     coverage = _COVERAGE_DAMAGE_TYPES.get(ctx.coverage_type)
@@ -797,10 +842,10 @@ def r6_policy_coverage_mismatch(ctx: ClaimContext) -> RiskSignal | None:
     # Collect the damage types actually claimed (CV + claim form)
     claimed: set[str] = set()
     for d in ctx.image_damages:
-        if d.damage_type and d.damage_type not in ("pending", "no_damage"):
+        if d.damage_type and _normalize(d.damage_type) not in _NON_DAMAGE_TYPES:
             claimed.add(_normalize(d.damage_type))
     for d in ctx.claim_form_damages:
-        if d.damage_type:
+        if d.damage_type and _normalize(d.damage_type) not in _NON_DAMAGE_TYPES:
             claimed.add(_normalize(d.damage_type))
 
     if not claimed:

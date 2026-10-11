@@ -252,6 +252,7 @@ def _to_status_response(
             signal_count=signal_count,
             evidence_count=evidence_count,
             investigation_id=inv.id if inv else None,
+            baseline_source="synthetic:illustrative",
         )
     return AnalysisStatusResponse(
         analysis_id=analysis.id,

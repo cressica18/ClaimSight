@@ -143,6 +143,7 @@ def run_cv_on_image(
     if predictor is None:
         from app.core.config import settings
         if settings.use_demo_cv:
+            logger.info("Demo CV mode enabled — using deterministic predictor")
             predictor = _DemoCVPredictor()
         else:
             try:
@@ -164,6 +165,10 @@ def run_cv_on_image(
                 db.flush()
                 return [failed_dmg]
             predictor = get_predictor()
+            logger.info(
+                "Loaded CV model: version=%s, damage_types=%s",
+                predictor.model_version, predictor.damage_types
+            )
 
     # Extract actual image path from region_ref (may be JSON)
     actual_image_path = _extract_image_path(image_path)
