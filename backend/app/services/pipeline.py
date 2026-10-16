@@ -291,7 +291,7 @@ def _run_steps(
         Damage.damage_type != "pending",
     ).delete(synchronize_session=False)
     db.commit()
-    _run_cv(claim_id, db, predictor=cv_predictor)
+    _run_cv(claim_id, db, predictor=cv_predictor, analysis_id=analysis.id)
 
     # Step 4: document extraction.
     # Before re-extracting, reset prior Document extraction state so
@@ -456,7 +456,7 @@ def _set_step(analysis: Analysis, step: str, db: Session) -> None:
     db.commit()
 
 
-def _run_cv(claim_id: int, db: Session, *, predictor: Any) -> None:
+def _run_cv(claim_id: int, db: Session, *, predictor: Any, analysis_id: int) -> None:
     """Step 3: run CV on every pending image. Per-image isolation.
 
     `run_cv_on_image` already handles per-image failures by writing
@@ -485,6 +485,7 @@ def _run_cv(claim_id: int, db: Session, *, predictor: Any) -> None:
         try:
             new_damages = cv_service.run_cv_on_image(
                 db, claim_id, damage.region_ref, predictor=predictor,
+                analysis_id=analysis_id,
             )
             db.commit()
         except Exception as exc:  # noqa: BLE001

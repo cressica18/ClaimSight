@@ -27,7 +27,7 @@ from sqlalchemy import (
     Text,
     func,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
 
@@ -67,6 +67,10 @@ class Analysis(Base):
     )
     finished_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
+    )
+
+    damages: Mapped[list["Damage"]] = relationship(  # noqa: F821
+        "Damage", back_populates="analysis", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:

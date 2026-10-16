@@ -229,8 +229,9 @@ class TestCVIntegration:
         assert result["error"] is not None
         assert "not found" in result["error"].lower() or "failed" in result["error"].lower()
 
-    def test_repeated_analysis_creates_new_damage_records(self, client, db_session, tmp_path):
-        """Running analysis multiple times creates new Damage records each time."""
+    def test_repeated_analysis_replaces_previous_results(self, client, db_session, tmp_path):
+        """Running analysis multiple times on the same image replaces previous
+        CV results instead of accumulating them."""
         claim_id = _seed_claim(db_session)
 
         # Upload image
@@ -240,22 +241,30 @@ class TestCVIntegration:
                 f"/claims/{claim_id}/images",
                 files={"files": ("test.jpg", f, "image/jpeg")}
             )
-        assert response.status_code == 201
-        damage_id = response.json()[0]["id"]
+            assert response.status_code == 201
+            damage_id = response.json()[0]["id"]
 
-        # First analysis
-        response1 = client.post(f"/claims/{claim_id}/damages/{damage_id}/analyze")
-        assert response1.status_code == 200
+            # First analysis
+            response1 = client.post(f"/claims/{claim_id}/damages/{damage_id}/analyze")
+            assert response1.status_code == 200
+            result1 = response1.json()
+            assert result1["damage_id"] != damage_id  # New damage record created
 
-        # Second analysis on same damage record
-        response2 = client.post(f"/claims/{claim_id}/damages/{damage_id}/analyze")
-        assert response2.status_code == 200
+            # Second analysis on same damage record (re-analysis)
+            response2 = client.post(f"/claims/{claim_id}/damages/{damage_id}/analyze")
+            assert response2.status_code == 200
+            result2 = response2.json()
 
-        # Should have created new damage records each time
-        from app.models.damage import Damage
-        damages = db_session.query(Damage).filter(Damage.claim_id == claim_id).all()
-        # Original pending + first analysis damages + second analysis damages
-        assert len(damages) >= 3
+            # Should have replaced the first analysis result, not accumulated
+            from app.models.damage import Damage
+            damages = db_session.query(Damage).filter(Damage.claim_id == claim_id).all()
+            # Original pending + latest analysis result only (previous result replaced)
+            assert len(damages) == 2
+            # The latest result should have a different damage_id than the first analysis
+            assert result2["damage_id"] != result1["damage_id"]
+            # But the pending record should still exist
+            pending_count = sum(1 for d in damages if d.damage_type == "pending")
+            assert pending_count == 1
 
 
 class TestCVLowConfidence:

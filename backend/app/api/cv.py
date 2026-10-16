@@ -123,7 +123,7 @@ def _run_cv_and_respond(
 
 
 # ─── Endpoints ────────────────────────────────────────────────────────────────
-
+ 
 @router.post(
     "/{id}/damages/{damage_id}/analyze",
     response_model=CVAnalysisResult,
@@ -137,6 +137,7 @@ def analyze_single_image(
     """
     Run CV inference on an already-uploaded image (Damage record must exist).
     Creates new Damage rows with the real prediction results.
+    Replaces any previous CV results for the same image.
     """
     claim = db.get(Claim, id)
     if not claim:
@@ -149,9 +150,40 @@ def analyze_single_image(
     if not damage.region_ref:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Damage record has no associated image path.")
 
+    # Extract image path from region_ref for deduplication
+    from app.services.cv_service import _extract_image_path
+    parsed = _parse_region_ref(damage.region_ref)
+    image_path = parsed.get("image_path", damage.region_ref)
+
+    # Create an Analysis record for this single-image analysis
+    from app.models.analysis import Analysis
+    from app.models.enums import AnalysisStatus
+    analysis = Analysis(
+        claim_id=id,
+        status=AnalysisStatus.completed.value,  # Single-image analysis is synchronous
+        current_step=None,
+    )
+    db.add(analysis)
+    db.commit()
+    db.refresh(analysis)
+
     # Run CV inference using the service
     from app.services.cv_service import run_cv_on_image
-    damages = run_cv_on_image(db, id, damage.region_ref)
+
+    # Before running CV, remove any previous CV results for this same image (same region_ref)
+    # to support re-analysis deduplication. Preserve cv_error and claim_form records.
+    image_path = _extract_image_path(damage.region_ref)
+    db.query(Damage).filter(
+        Damage.claim_id == id,
+        Damage.source == "image",
+        Damage.damage_type.notin_(("pending", "cv_error")),
+        Damage.region_ref.like(f"%{image_path}%"),
+    ).delete(synchronize_session=False)
+    db.flush()
+
+    # Run CV inference using the service
+    from app.services.cv_service import run_cv_on_image
+    damages = run_cv_on_image(db, id, damage.region_ref, analysis_id=analysis.id)
 
     # Persist the new damage rows so they survive the request lifecycle.
     # Without this commit, the get_db() context manager rolls the transaction

@@ -48,6 +48,9 @@ from app.models.enums import (
 from app.models.evidence import Evidence
 from app.models.investigation import Investigation
 from app.models.policy import Policy
+from app.models.risk_signal import RiskSignal
+from app.models.vehicle import Vehicle
+from app.services.pipeline import _run_cv
 from tests.backend.test_pipeline_demo_scenarios import _add_pending_image
 
 
@@ -223,18 +226,18 @@ def _seed_claim(
     return claim
 
 
-def _patch_storage_path(monkeypatch, tmp_path: Path, *, filenames: list[str] | None = None) -> None:
+def _patch_storage_path(monkeypatch, tmp_path: Path, claim_id: int = 1, *, filenames: list[str] | None = None) -> None:
     """Make the document_intelligence stub see a real file on disk so
     it does not flip the document to `failed` (which would conflate
     'extraction failed' with 'storage missing').
     """
     base = tmp_path
-    (base / "1").mkdir(parents=True, exist_ok=True)
+    (base / str(claim_id)).mkdir(parents=True, exist_ok=True)
     for name in (filenames or ["pipe-doc-1.pdf"]):
         if name.lower().endswith(".pdf"):
-            (base / "1" / name).write_bytes(_MINIMAL_PDF_BYTES)
+            (base / str(claim_id) / name).write_bytes(_MINIMAL_PDF_BYTES)
         else:
-            (base / "1" / name).write_bytes(b"\xff\xd8\xff\xe0" + b"\x00" * 32 + b"\xff\xd9")
+            (base / str(claim_id) / name).write_bytes(b"\xff\xd8\xff\xe0" + b"\x00" * 32 + b"\xff\xd9")
     monkeypatch.setattr(
         "app.services.document_intelligence.settings.upload_dir",
         str(base),
@@ -853,3 +856,196 @@ def test_r4_fires_when_repair_total_exceeds_baseline(db_session, monkeypatch, tm
         f"Expected R4 to fire with total=50000 vs baseline; "
         f"signals actually fired: {sorted(rule_ids)}"
     )
+
+
+# ─── Phase 12b: Repeated-analysis deduplication regression tests ───────────────
+
+
+def test_reanalysis_same_analysis_id_deduplicates(
+    db_session, monkeypatch, tmp_path
+):
+    """Running _run_cv twice with the same analysis_id should
+    deduplicate CV damage records (replace, not accumulate)."""
+    _patch_storage_path(monkeypatch, tmp_path, filenames=["test.jpg"])
+    predictor = FakeCVPredictor(damage_type="dent")
+    gemini = FakeGeminiClient()
+    claim = _seed_claim(db_session, claim_number="CLM-PIPE-REANALYSIS")
+
+    # Add a pending image so the pipeline has something to analyze
+    _add_pending_image(db_session, claim, image_id="test.jpg")
+    db_session.commit()
+
+    # Create an analysis record manually (simulating a pipeline run)
+    analysis = Analysis(
+        claim_id=claim.id,
+        status=AnalysisStatus.running.value,
+        current_step=None,
+    )
+    claim.status = ClaimStatus.analyzing.value
+    db_session.add(analysis)
+    db_session.add(claim)
+    db_session.commit()
+    db_session.refresh(analysis)
+    analysis_id = analysis.id
+
+    # Run _run_cv for the first time
+    _run_cv(claim.id, db_session, predictor=predictor, analysis_id=analysis_id)
+    db_session.commit()
+
+    # Count damage records after first run
+    damages1 = db_session.query(Damage).filter(
+        Damage.claim_id == claim.id,
+        Damage.source == "image",
+        Damage.damage_type != "pending",
+        Damage.analysis_id == analysis_id,
+    ).all()
+    count1 = len(damages1)
+    assert count1 > 0
+
+    # Run _run_cv again with the SAME analysis_id (simulating a retry)
+    _run_cv(claim.id, db_session, predictor=predictor, analysis_id=analysis_id)
+    db_session.commit()
+
+    # Count damage records after second run with same analysis_id
+    damages_after_retry = db_session.query(Damage).filter(
+        Damage.claim_id == claim.id,
+        Damage.source == "image",
+        Damage.damage_type != "pending",
+        Damage.analysis_id == analysis_id,
+    ).all()
+
+    # Should still have the same number of damage records (deduplicated)
+    assert len(damages_after_retry) == count1, (
+        f"Expected {count1} damage records after retry with same analysis_id, "
+        f"got {len(damages_after_retry)}"
+    )
+
+
+def test_reanalysis_new_analysis_id_creates_new_records(
+    db_session, monkeypatch, tmp_path
+):
+    """Running the pipeline with a new analysis_id should create new
+    damage records (not deduplicate across different analyses)."""
+    # Need two sets of image files for two analysis runs
+    _patch_storage_path(monkeypatch, tmp_path, claim_id=1, filenames=["test1.jpg", "pipe-image-1.jpg"])
+    predictor = FakeCVPredictor(damage_type="dent")
+    gemini = FakeGeminiClient()
+    claim = _seed_claim(db_session, claim_number="CLM-PIPE-REANALYSIS-2")
+
+    # Add pending images for first analysis
+    _add_pending_image(db_session, claim, image_id="test1.jpg")
+    _add_pending_image(db_session, claim, image_id="pipe-image-1.jpg")
+    db_session.commit()
+
+    # Patch storage path for the claim's images
+    _patch_storage_path(monkeypatch, tmp_path, claim_id=1, filenames=["test1.jpg", "pipe-image-1.jpg"])
+
+    # Create first analysis
+    analysis1 = Analysis(
+        claim_id=1,  # claim.id will be 1 since it's the first claim
+        status=AnalysisStatus.running.value,
+        current_step=None,
+    )
+    claim.status = ClaimStatus.analyzing.value
+    db_session.add(analysis1)
+    db_session.commit()
+    db_session.refresh(analysis1)
+
+    predictor1 = FakeCVPredictor(damage_type="dent")
+    gemini1 = FakeGeminiClient()
+    _run_cv(1, db_session, predictor=predictor1, analysis_id=analysis1.id)
+    db_session.commit()
+
+    # Get damage count for first analysis
+    damages1 = db_session.query(Damage).filter(
+        Damage.claim_id == 1,
+        Damage.source == "image",
+        Damage.damage_type != "pending",
+        Damage.analysis_id == analysis1.id,
+    ).all()
+    count1 = len(damages1)
+    assert count1 > 0
+
+    # Create second analysis (new analysis_id)
+    analysis2 = Analysis(
+        claim_id=1,
+        status=AnalysisStatus.running.value,
+        current_step=None,
+    )
+    db_session.add(analysis2)
+    db_session.commit()
+    db_session.refresh(analysis2)
+
+    # Add new pending images for second analysis
+    _add_pending_image(db_session, claim, image_id="test2.jpg")
+    _add_pending_image(db_session, claim, image_id="pipe-image-2.jpg")
+    db_session.commit()
+    _patch_storage_path(monkeypatch, tmp_path, claim_id=1, filenames=["test2.jpg", "pipe-image-2.jpg"])
+
+    # Run second analysis with new analysis_id
+    _run_cv(1, db_session, predictor=predictor, analysis_id=analysis2.id)
+    db_session.commit()
+
+    # Get damage records for second analysis
+    damages2 = db_session.query(Damage).filter(
+        Damage.claim_id == 1,
+        Damage.source == "image",
+        Damage.damage_type != "pending",
+        Damage.analysis_id == analysis2.id,
+    ).all()
+    count2 = len(damages2)
+    assert count2 > 0
+
+    # Both analyses should have their own damage records
+    assert count1 == count2  # Same number of detections expected
+
+
+def test_cv_error_damage_not_deduplicated(
+    db_session, monkeypatch, tmp_path
+):
+    """cv_error damage records should not be treated as valid CV detections
+    for deduplication purposes."""
+    _patch_storage_path(monkeypatch, tmp_path, claim_id=1, filenames=["test.jpg"])
+    predictor = FakeCVPredictor(damage_type="dent")
+    gemini = FakeGeminiClient()
+    claim = _seed_claim(db_session, claim_number="CLM-PIPE-CVERROR-UNIQUE")
+
+    # Create an analysis record first
+    analysis = Analysis(
+        claim_id=claim.id,
+        status=AnalysisStatus.running.value,
+        current_step=None,
+    )
+    claim.status = ClaimStatus.analyzing.value
+    db_session.add(analysis)
+    db_session.commit()
+    db_session.refresh(analysis)
+
+    # Add a cv_error damage record for this analysis
+    cv_error_dmg = Damage(
+        claim_id=claim.id,
+        source="image",
+        damage_type="cv_error",
+        severity="unknown",
+        confidence=0.0,
+        region_ref='{"image_path": "uploads/1/error.jpg"}',
+        analysis_id=analysis.id,
+    )
+    db_session.add(cv_error_dmg)
+    db_session.commit()
+
+    _add_pending_image(db_session, claim, image_id="test.jpg")
+    db_session.commit()
+
+    predictor = FakeCVPredictor(damage_type="dent")
+    gemini = FakeGeminiClient()
+    _run_cv(claim.id, db_session, predictor=predictor, analysis_id=analysis.id)
+    db_session.commit()
+
+    # The cv_error record should still exist (not deleted by deduplication)
+    cv_error_records = db_session.query(Damage).filter(
+        Damage.claim_id == claim.id,
+        Damage.damage_type == "cv_error",
+        Damage.analysis_id == analysis.id,
+    ).all()
+    assert len(cv_error_records) == 1

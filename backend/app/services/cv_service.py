@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 # ─── Demo CV predictor (Phase 13) ──────────────────────────────────────────
-#
+
 # When `settings.use_demo_cv` is true, the service substitutes a small
 # deterministic predictor in place of the trained model. The output
 # (damage type, severity, confidence) is derived from the image
@@ -121,6 +121,7 @@ def run_cv_on_image(
     claim_id: int,
     image_path: str,
     predictor=None,
+    analysis_id: int | None = None,
 ) -> list[Damage]:
     """
     Run CV inference on a single image and persist Damage rows.
@@ -130,6 +131,9 @@ def run_cv_on_image(
         claim_id:     The claim the image belongs to
         image_path:   region_ref from Damage record (JSON with "image_path" or plain path)
         predictor:    Optional injected predictor (for testing); defaults to module singleton
+        analysis_id:  Optional analysis ID to scope damage records to this analysis run.
+                      If provided, prior CV damage rows for this analysis will be removed
+                      before creating new ones, and new rows will be linked to this analysis.
 
     Returns:
         List of newly persisted Damage rows (may be empty on error).
@@ -169,6 +173,16 @@ def run_cv_on_image(
                 "Loaded CV model: version=%s, damage_types=%s",
                 predictor.model_version, predictor.damage_types
             )
+
+    # If analysis_id is provided, clean up prior CV damage rows for this analysis
+    if analysis_id is not None:
+        db.query(Damage).filter(
+            Damage.claim_id == claim_id,
+            Damage.source == "image",
+            Damage.analysis_id == analysis_id,
+            Damage.damage_type != "cv_error",
+        ).delete(synchronize_session=False)
+        db.flush()
 
     # Extract actual image path from region_ref (may be JSON)
     actual_image_path = _extract_image_path(image_path)
@@ -262,6 +276,7 @@ def run_cv_on_image(
             damage_type=dt.label,
             severity=result.severity.label,
             confidence=dt.confidence,
+            analysis_id=analysis_id,
             # Store metadata including low_confidence flag in region_ref as JSON
             region_ref=json.dumps({
                 "image_path": actual_image_path,

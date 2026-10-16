@@ -1,4 +1,4 @@
-"""Damage model — blueprint entity: Damage(id, claim_id, source, damage_type, severity, confidence, region_ref)."""
+"""Damage model — blueprint entity: Damage(id, claim_id, source, damage_type, severity, confidence, region_ref, analysis_id)."""
 
 from datetime import datetime
 
@@ -25,12 +25,19 @@ class Damage(Base):
     confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
     # region_ref: free-form reference to image region / bounding box description
     region_ref: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    # analysis_id: links CV-generated damage records to the analysis run that produced them
+    analysis_id: Mapped[int | None] = mapped_column(
+        ForeignKey("analyses.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
     # ─── Relationships ────────────────────────────────────────────────────────
     claim: Mapped["Claim"] = relationship("Claim", back_populates="damages")  # noqa: F821
+    analysis: Mapped["Analysis | None"] = relationship(  # noqa: F821
+        "Analysis", back_populates="damages"
+    )
 
     def __repr__(self) -> str:
         return f"<Damage id={self.id} type={self.damage_type!r} severity={self.severity!r}>"
