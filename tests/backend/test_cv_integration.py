@@ -98,9 +98,20 @@ class TestCVIntegration:
         assert ref["image_path"].startswith("uploads/")
         print(f"Created damage with region_ref: {damage['region_ref']}")
 
-    @pytest.mark.skip(reason="Requires 5-class trained checkpoint (claimsight_cv_v2_5class.pt) which hasn't been trained yet. Skipping until Phase 15.")
-    def test_analyze_single_image_real_inference(self, client, db_session, tmp_path):
-        """Test real CV inference on an uploaded image using the trained checkpoint."""
+    def test_analyze_single_image_real_inference(self, client, db_session, tmp_path, monkeypatch):
+        """Test real CV inference on an uploaded image using the trained 5-class checkpoint.
+
+        Overrides CV_CHECKPOINT_PATH to the 5-class checkpoint for this test only,
+        without changing the application default (8-class v1). Resets the predictor
+        singleton so it reloads from the overridden path.
+        """
+        from app.core.config import settings
+        import ml.inference.predictor as _predictor_module
+
+        five_class_ckpt = Path(__file__).resolve().parents[2] / "ml/weights/claimsight_cv_v2_5class.pt"
+        monkeypatch.setattr(settings, "cv_checkpoint_path", str(five_class_ckpt))
+        monkeypatch.setattr(_predictor_module, "_predictor", None)
+
         claim_id = _seed_claim(db_session)
 
         # Create and upload a test image
@@ -127,14 +138,23 @@ class TestCVIntegration:
         assert "model_version" in result
         assert "timestamp" in result
 
-        # Verify damage types returned
+        # Verify model_version reflects the 5-class checkpoint
+        assert result["model_version"] == "claimsight_cv_v2_5class"
+
+        # Verify damage types returned — must be from the 5-class set
+        _FIVE_CLASS_DAMAGE_TYPES = {
+            "scratch", "dent", "shattered_glass", "headlight_damage", "no_damage",
+        }
         assert len(result["damage_types"]) >= 1
         for dt in result["damage_types"]:
             assert "label" in dt
             assert "confidence" in dt
             assert 0.0 <= dt["confidence"] <= 1.0
+            assert dt["label"] in _FIVE_CLASS_DAMAGE_TYPES, (
+                f"Unexpected 8-class damage label '{dt['label']}' from 5-class model"
+            )
 
-        # Verify severity
+        # Verify severity — 3 classes only
         assert result["severity"]["label"] in ("minor", "moderate", "severe")
         assert 0.0 <= result["severity"]["confidence"] <= 1.0
 

@@ -14,7 +14,7 @@ ClaimSight aims to shorten that loop by doing the cross-checking automatically a
 
 The full pipeline:
 
-1. **Images** — accident photos are analysed by a fine-tuned ResNet-50 computer-vision model that predicts damage type (8 classes) and severity (minor / moderate / severe).
+1. **Images** — accident photos are analysed by a fine-tuned ResNet-50 computer-vision model that predicts damage type (8 classes by default; a 5-class alternative is available via `CV_CHECKPOINT_PATH`) and severity (minor / moderate / severe).
 2. **Documents** — uploaded claim forms, repair estimates, and policy documents pass through a deterministic extraction layer using PyMuPDF. The extractor reads text from digitally generated PDFs and structures fields such as policy numbers, claim numbers, VINs, plate numbers, coverage types, dates, amounts, repair line items, and more. For repair estimates and invoices, **table extraction via pdfplumber** recovers structured line items with quantities, unit prices, labor hours, and operation types. For scanned/image-only PDFs where no text can be extracted, the extractor falls back to local OCR using Tesseract (if available) to recover text before running the same field extraction logic. The extraction method ("text", "ocr", "filename", "none") is stored for provenance.
 3. **Consistency rules (R1–R9)** — nine deterministic rules cross-check all the evidence: do the photos match the claimed damage? Does the repair estimate cost match the baseline for this type of damage? Has the same vehicle had the same damage repaired before? And so on.
 4. **Risk score** — a deterministic, explainable formula turns the rule firings into a 0–100 score and a Low / Medium / High band. It defines five named feature slots with blueprint weights; `f5` (anomaly/Isolation Forest) is currently a no-op, so the four active features are proportionally rescaled.
@@ -168,6 +168,7 @@ All variables live in `backend/.env`. **Never commit a `.env` file with real sec
 | `GEMINI_RETRY_BACKOFF_SECONDS` | Wait between retry attempts                                           | `2.0`                                                                        |
 | `USE_DEMO_CV`                  | Use filename-based stub instead of the trained model                  | `false`                                                                      |
 | `USE_DEMO_GEMINI`              | Use a canned Gemini response (no network call)                        | `false`                                                                      |
+| `CV_CHECKPOINT_PATH`           | Path to the CV model checkpoint, relative to project root or absolute | `ml/weights/claimsight_cv_v1.pt` (original eight-class model)                |
 
 ### Getting a Gemini API key
 
@@ -312,6 +313,33 @@ USE_DEMO_GEMINI=true
 
 ---
 
+## CV error behavior
+
+When CV inference cannot produce a result (missing image file, missing
+checkpoint, or any inference exception), the API returns **200 OK** with
+an `error` field set on the result and persists a `cv_error` damage row
+(`damage_type="cv_error"`, `severity="unknown"`, `confidence=0.0`) so
+the claim has a record of the failed image. `cv_error` rows are:
+
+- **Preserved** on re-analysis — they are never treated as valid CV
+  detections and are excluded from deduplication deletes.
+- **Excluded** from the consistency rules (R1–R9) — they do not count
+  as real damage evidence.
+- **Excluded** from the risk engine's primary-damage and overlap
+  lookups.
+
+The relevant API error codes are:
+
+| Situation | Endpoint | Status | Body |
+|---|---|---|---|
+| Claim not found | `POST /claims/{id}/damages/{damage_id}/analyze` | 404 | `{"detail": "Claim not found."}` |
+| Damage not found / wrong claim | `POST /claims/{id}/damages/{damage_id}/analyze` | 404 | `{"detail": "Damage record not found for this claim."}` |
+| Damage has no image path | `POST /claims/{id}/damages/{damage_id}/analyze` | 400 | `{"detail": "Damage record has no associated image path."}` |
+| CV inference fails (any cause) | `POST /claims/{id}/damages/{damage_id}/analyze` | 200 | `{"error": "CV inference failed", ...}` |
+| No images for batch | `POST /claims/{id}/analyze-images` | 404 | `{"detail": "No uploaded images found for this claim. Upload images first."}` |
+
+---
+
 ## Tests
 
 ```bash
@@ -320,7 +348,7 @@ source backend/.venv/bin/activate
 python3 -m pytest tests/backend tests/ml -q
 ```
 
-Current result: **287 passed**.
+Current result: **334 passed** (313 backend + 21 ML), 0 skipped.
 
 ### Frontend
 

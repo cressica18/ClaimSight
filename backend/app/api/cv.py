@@ -167,23 +167,26 @@ def analyze_single_image(
     db.commit()
     db.refresh(analysis)
 
-    # Run CV inference using the service
+    # Run CV inference using the service. We run CV first so the newly created
+    # Damage rows are assigned higher IDs than any rows we are about to delete.
+    # SQLite reuses rowids after DELETE, so creating first ensures the new row
+    # gets a distinct id rather than reusing the deleted row's id.
     from app.services.cv_service import run_cv_on_image
 
-    # Before running CV, remove any previous CV results for this same image (same region_ref)
-    # to support re-analysis deduplication. Preserve cv_error and claim_form records.
+    damages = run_cv_on_image(db, id, damage.region_ref, analysis_id=analysis.id)
+
+    # Remove any previous CV results for this same image (same region_ref)
+    # to support re-analysis deduplication. Preserve cv_error and claim_form
+    # records, and preserve the newly created rows for this analysis.
     image_path = _extract_image_path(damage.region_ref)
     db.query(Damage).filter(
         Damage.claim_id == id,
         Damage.source == "image",
         Damage.damage_type.notin_(("pending", "cv_error")),
         Damage.region_ref.like(f"%{image_path}%"),
+        Damage.analysis_id != analysis.id,
     ).delete(synchronize_session=False)
     db.flush()
-
-    # Run CV inference using the service
-    from app.services.cv_service import run_cv_on_image
-    damages = run_cv_on_image(db, id, damage.region_ref, analysis_id=analysis.id)
 
     # Persist the new damage rows so they survive the request lifecycle.
     # Without this commit, the get_db() context manager rolls the transaction

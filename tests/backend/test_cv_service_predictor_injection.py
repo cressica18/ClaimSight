@@ -143,6 +143,39 @@ def test_injected_predictor_is_used_when_ml_package_missing(
     assert len(predictor.calls) == 1
 
 
+class _FailingInjectedPredictor:
+    """An injected predictor whose predict_from_path raises a generic
+    exception (simulating an inference failure that is not a
+    FileNotFoundError / missing checkpoint).
+    """
+
+    def predict_from_path(self, image_path):  # noqa: D401
+        raise RuntimeError("simulated inference failure")
+
+
+def test_injected_predictor_inference_exception_falls_back_to_cv_error(
+    db_session,
+):
+    """When an injected predictor raises a generic exception during
+    inference, run_cv_on_image must fall back to a cv_error row rather
+    than propagating the exception.
+    """
+    claim = _make_claim(db_session, image_filename="generic_fail.jpg")
+    dmg = db_session.query(Damage).filter(
+        Damage.claim_id == claim.id, Damage.source == "image",
+    ).first()
+    predictor = _FailingInjectedPredictor()
+
+    new_rows = cv_service.run_cv_on_image(
+        db_session, claim.id, dmg.region_ref, predictor=predictor,
+    )
+
+    assert len(new_rows) == 1
+    assert new_rows[0].damage_type == "cv_error"
+    assert new_rows[0].severity == "unknown"
+    assert new_rows[0].confidence == 0.0
+
+
 def test_injected_predictor_does_not_crash_when_ml_unimportable(
     db_session, monkeypatch
 ):
