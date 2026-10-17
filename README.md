@@ -89,7 +89,6 @@ The pipeline runs in a background thread in the same Python process. `POST /clai
 ```
 claimsight/
 ├── README.md
-├── DEVLOG.md
 ├── pytest.ini
 │
 ├── backend/
